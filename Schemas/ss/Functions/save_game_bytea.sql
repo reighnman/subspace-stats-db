@@ -3,8 +3,6 @@ create or replace function ss.save_game_bytea(
 )
 returns game.game_id%type
 language sql
-security definer
-set search_path = ss, pg_temp
 as
 $$
 
