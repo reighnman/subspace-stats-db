@@ -36,4 +36,4 @@ CREATE TABLE IF NOT EXISTS ss.player_ship_usage
 TABLESPACE pg_default;
 
 ALTER TABLE IF EXISTS ss.player_ship_usage
-    OWNER to postgres;
+    OWNER to ss_developer;

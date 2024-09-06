@@ -15,4 +15,4 @@ CREATE TABLE IF NOT EXISTS ss.arena
 TABLESPACE pg_default;
 
 ALTER TABLE IF EXISTS ss.arena
-    OWNER to postgres;
+    OWNER to ss_developer;

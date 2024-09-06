@@ -28,13 +28,13 @@ CREATE TABLE IF NOT EXISTS ss.versus_game_kill_event
         REFERENCES ss.player (player_id) MATCH SIMPLE
         ON UPDATE NO ACTION
         ON DELETE NO ACTION,
-    CONSTRAINT versus_game_kill_event_x_coord_check CHECK (x_coord >= 0 AND x_coord <= 16384),
-    CONSTRAINT versus_game_kill_event_y_coord_check CHECK (y_coord >= 0 AND y_coord <= 16384),
     CONSTRAINT versus_game_kill_event_killed_ship_check CHECK (killed_ship >= 0 AND killed_ship <= 7),
-    CONSTRAINT versus_game_kill_event_killer_ship_check CHECK (killer_ship >= 0 AND killer_ship <= 7)
+    CONSTRAINT versus_game_kill_event_killer_ship_check CHECK (killer_ship >= 0 AND killer_ship <= 7),
+    CONSTRAINT versus_game_kill_event_x_coord_check CHECK (x_coord >= 0 AND x_coord <= 16384),
+    CONSTRAINT versus_game_kill_event_y_coord_check CHECK (y_coord >= 0 AND y_coord <= 16384)
 )
 
 TABLESPACE pg_default;
 
 ALTER TABLE IF EXISTS ss.versus_game_kill_event
-    OWNER to postgres;
+    OWNER to ss_developer;

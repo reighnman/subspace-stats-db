@@ -21,7 +21,7 @@ CREATE TABLE IF NOT EXISTS ss.player_rating
 TABLESPACE pg_default;
 
 ALTER TABLE IF EXISTS ss.player_rating
-    OWNER to postgres;
+    OWNER to ss_developer;
 -- Index: player_rating_stat_period_id_rating_player_id_idx
 
 -- DROP INDEX IF EXISTS ss.player_rating_stat_period_id_rating_player_id_idx;

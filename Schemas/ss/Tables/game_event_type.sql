@@ -12,4 +12,4 @@ CREATE TABLE IF NOT EXISTS ss.game_event_type
 TABLESPACE pg_default;
 
 ALTER TABLE IF EXISTS ss.game_event_type
-    OWNER to postgres;
+    OWNER to ss_developer;

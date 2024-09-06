@@ -13,4 +13,4 @@ CREATE TABLE IF NOT EXISTS ss.ship_item
 TABLESPACE pg_default;
 
 ALTER TABLE IF EXISTS ss.ship_item
-    OWNER to postgres;
+    OWNER to ss_developer;

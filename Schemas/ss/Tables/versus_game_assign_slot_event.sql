@@ -22,4 +22,4 @@ CREATE TABLE IF NOT EXISTS ss.versus_game_assign_slot_event
 TABLESPACE pg_default;
 
 ALTER TABLE IF EXISTS ss.versus_game_assign_slot_event
-    OWNER to postgres;
+    OWNER to ss_developer;

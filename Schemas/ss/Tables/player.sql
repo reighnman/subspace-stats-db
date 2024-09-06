@@ -20,4 +20,4 @@ CREATE TABLE IF NOT EXISTS ss.player
 TABLESPACE pg_default;
 
 ALTER TABLE IF EXISTS ss.player
-    OWNER to postgres;
+    OWNER to ss_developer;

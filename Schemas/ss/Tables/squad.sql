@@ -13,4 +13,4 @@ CREATE TABLE IF NOT EXISTS ss.squad
 TABLESPACE pg_default;
 
 ALTER TABLE IF EXISTS ss.squad
-    OWNER to postgres;
+    OWNER to ss_developer;

@@ -36,4 +36,4 @@ CREATE TABLE IF NOT EXISTS ss.pb_game_participant
 TABLESPACE pg_default;
 
 ALTER TABLE IF EXISTS ss.pb_game_participant
-    OWNER to postgres;
+    OWNER to ss_developer;

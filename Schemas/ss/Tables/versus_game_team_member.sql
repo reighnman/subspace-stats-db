@@ -60,7 +60,7 @@ CREATE TABLE IF NOT EXISTS ss.versus_game_team_member
 TABLESPACE pg_default;
 
 ALTER TABLE IF EXISTS ss.versus_game_team_member
-    OWNER to postgres;
+    OWNER to ss_developer;
 -- Index: versus_game_team_member_player_id_game_id_freq_idx
 
 -- DROP INDEX IF EXISTS ss.versus_game_team_member_player_id_game_id_freq_idx;

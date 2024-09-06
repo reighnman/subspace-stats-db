@@ -18,4 +18,4 @@ CREATE TABLE IF NOT EXISTS ss.stat_period
 TABLESPACE pg_default;
 
 ALTER TABLE IF EXISTS ss.stat_period
-    OWNER to postgres;
+    OWNER to ss_developer;

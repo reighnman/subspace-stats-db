@@ -58,7 +58,7 @@ CREATE TABLE IF NOT EXISTS ss.player_versus_stats
 TABLESPACE pg_default;
 
 ALTER TABLE IF EXISTS ss.player_versus_stats
-    OWNER to postgres;
+    OWNER to ss_developer;
 -- Index: player_versus_stats_stat_period_id_player_id_idx
 
 -- DROP INDEX IF EXISTS ss.player_versus_stats_stat_period_id_player_id_idx;

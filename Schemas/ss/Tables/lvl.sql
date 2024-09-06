@@ -14,4 +14,4 @@ CREATE TABLE IF NOT EXISTS ss.lvl
 TABLESPACE pg_default;
 
 ALTER TABLE IF EXISTS ss.lvl
-    OWNER to postgres;
+    OWNER to ss_developer;

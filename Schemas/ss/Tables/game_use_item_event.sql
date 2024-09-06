@@ -25,4 +25,4 @@ CREATE TABLE IF NOT EXISTS ss.game_use_item_event
 TABLESPACE pg_default;
 
 ALTER TABLE IF EXISTS ss.game_use_item_event
-    OWNER to postgres;
+    OWNER to ss_developer;

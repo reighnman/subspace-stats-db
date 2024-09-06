@@ -34,7 +34,7 @@ CREATE TABLE IF NOT EXISTS ss.game
 TABLESPACE pg_default;
 
 ALTER TABLE IF EXISTS ss.game
-    OWNER to postgres;
+    OWNER to ss_developer;
 -- Index: game_time_played_game_type_id_game_id_idx
 
 -- DROP INDEX IF EXISTS ss.game_time_played_game_type_id_game_id_idx;
