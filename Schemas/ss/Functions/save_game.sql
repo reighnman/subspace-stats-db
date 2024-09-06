@@ -376,9 +376,14 @@ select ss.save_game('
 		{
 			"player" : "foo",
 			"play_duration" : "PT00:15:06.789",
+			"ship_usage" : {
+				"warbird" : "PT00:10:05.789",
+				"spider" : "PT00:5:01"
+			},
+			"is_winner" : false,
 			"score" : 0,
-			"is_winner" : 0,
-			"ship_type" : 0,
+			"kills" : 0,
+			"deaths" : 1,
 			"end_energy" : 0,
 			"gun_damage_dealt" : 1234,
 			"bomb_damage_dealt" : 1234,
@@ -395,9 +400,13 @@ select ss.save_game('
 		{
 			"player" : "bar",
 			"play_duration" : "PT00:15:06.789",
+			"ship_usage" : {
+				"warbird" : "PT00:10:05.789"
+			},
+			"is_winner" : true,
 			"score" : 1,
-			"is_winner" : 1,
-			"ship_type" : 0,
+			"kills" : 1,
+			"deaths" : 0,
 			"end_energy" : 622,
 			"gun_damage_dealt" : 1234,
 			"bomb_damage_dealt" : 1234,
@@ -574,9 +583,12 @@ with cte_data as(
 	insert into solo_game_participant(
 		 game_id
 		,player_id
-		,score
+		,play_duration
+		,ship_mask
 		,is_winner
-		,ship_type
+		,score
+		,kills
+		,deaths
 		,end_energy
 		,gun_damage_dealt
 		,bomb_damage_dealt
@@ -593,9 +605,21 @@ with cte_data as(
 	select
 		 (select g.game_id from cte_game as g) as game_id
 		,p.player_id
-		,par.score
+		,par.play_duration
+		,cast(( 
+			  case when su.warbird > cast('0' as interval) then 1 else 0 end
+			| case when su.javelin > cast('0' as interval) then 2 else 0 end
+			| case when su.spider > cast('0' as interval) then 4 else 0 end
+			| case when su.leviathan > cast('0' as interval) then 8 else 0 end
+			| case when su.terrier > cast('0' as interval) then 16 else 0 end
+			| case when su.weasel > cast('0' as interval) then 32 else 0 end
+			| case when su.lancaster > cast('0' as interval) then 64 else 0 end
+			| case when su.shark > cast('0' as interval) then 128 else 0 end) as smallint
+		 ) as ship_mask
 		,par.is_winner
-		,par.ship_type
+		,par.score
+		,par.kills
+		,par.deaths
 		,par.end_energy
 		,par.gun_damage_dealt
 		,par.bomb_damage_dealt
@@ -612,9 +636,12 @@ with cte_data as(
 	inner join cte_player as p
 		on cs.player_name = p.player_name
 	cross join jsonb_to_record(cs.participant_json) as par(
-		 score integer
+		 play_duration interval
+		,ship_mask smallint
 		,is_winner boolean
-		,ship_type smallint
+		,score integer
+		,kills smallint
+		,deaths smallint
 		,end_energy smallint
 		,gun_damage_dealt integer
 		,bomb_damage_dealt integer
@@ -628,6 +655,36 @@ with cte_data as(
 		,bomb_hit_count integer
 		,mine_hit_count integer
 	)
+	cross join jsonb_to_record(cs.participant_json->'ship_usage') as su(
+		 warbird interval
+		,javelin interval
+		,spider interval
+		,leviathan interval
+		,terrier interval
+		,weasel interval
+		,lancaster interval
+		,shark interval
+	)
+	returning
+		 player_id
+		,play_duration
+		,ship_mask
+		,is_winner
+		,score
+		,kills
+		,deaths
+		,end_energy
+		,gun_damage_dealt
+		,bomb_damage_dealt
+		,gun_damage_taken
+		,bomb_damage_taken
+		,self_damage
+		,gun_fire_count
+		,bomb_fire_count
+		,mine_fire_count
+		,gun_hit_count
+		,bomb_hit_count
+		,mine_hit_count
 )
 ,cte_pb_game_participant as(
 	insert into pb_game_participant(
@@ -707,33 +764,68 @@ with cte_data as(
 )
 ,cte_player_ship_usage_data as(
 	select
-		 p.player_id
-		,d.game_type_id
-		,sum(su.warbird) as warbird_duration
-		,sum(su.javelin) as javelin_duration
-		,sum(su.spider) as spider_duration
-		,sum(su.leviathan) as leviathan_duration
-		,sum(su.terrier) as terrier_duration
-		,sum(su.weasel) as weasel_duration
-		,sum(su.lancaster) as lancaster_duration
-		,sum(su.shark) as shark_duration
-	from cte_data as d
-	cross join cte_team_members as tm
-	inner join cte_player as p
-		on tm.player_name = p.player_name
-	cross join jsonb_to_record(tm.team_member_json->'ship_usage') as su(
-		 warbird interval
-		,javelin interval
-		,spider interval
-		,leviathan interval
-		,terrier interval
-		,weasel interval
-		,lancaster interval
-		,shark interval
-	)
-	group by
-		 p.player_id
-		,d.game_type_id
+		 dt.player_id
+		,(select game_type_id from cte_data) as game_type_id
+		,sum(dt.warbird) as warbird_duration
+		,sum(dt.javelin) as javelin_duration
+		,sum(dt.spider) as spider_duration
+		,sum(dt.leviathan) as leviathan_duration
+		,sum(dt.terrier) as terrier_duration
+		,sum(dt.weasel) as weasel_duration
+		,sum(dt.lancaster) as lancaster_duration
+		,sum(dt.shark) as shark_duration
+	from(
+		-- ship usage from solo stats
+		select
+			 p.player_id
+			,su.warbird
+			,su.javelin
+			,su.spider
+			,su.leviathan
+			,su.terrier
+			,su.weasel
+			,su.lancaster
+			,su.shark
+		from cte_solo_stats as cs
+		inner join cte_player as p
+			on cs.player_name = p.player_name
+		cross join jsonb_to_record(cs.participant_json->'ship_usage') as su(
+			 warbird interval
+			,javelin interval
+			,spider interval
+			,leviathan interval
+			,terrier interval
+			,weasel interval
+			,lancaster interval
+			,shark interval
+		)
+		union all
+		-- ships usage from team stats
+		select
+			 p.player_id
+			,su.warbird
+			,su.javelin
+			,su.spider
+			,su.leviathan
+			,su.terrier
+			,su.weasel
+			,su.lancaster
+			,su.shark
+		from cte_team_members as tm
+		inner join cte_player as p
+			on tm.player_name = p.player_name
+		cross join jsonb_to_record(tm.team_member_json->'ship_usage') as su(
+			 warbird interval
+			,javelin interval
+			,spider interval
+			,leviathan interval
+			,terrier interval
+			,weasel interval
+			,lancaster interval
+			,shark interval
+		)
+	) as dt
+	group by dt.player_id
 )
 ,cte_versus_team_member as(
 	insert into versus_game_team_member(
@@ -1109,11 +1201,129 @@ with cte_data as(
 	inner join stat_tracking as st
 		on sp.stat_tracking_id = st.stat_tracking_id
 )
--- TODO: solo
---,cte_insert_player_solo_stats as(
---)
---,cte_update_player_solo_stats as(
---)
+,cte_player_solo_stats as(
+	select
+		 csgp.player_id
+		,csp.stat_period_id
+		,csgp.play_duration
+		,csgp.is_winner
+		,case when csgp.is_winner is false
+			and exists( -- Another player is the winner
+				select *
+				from cte_solo_game_participant csgp2
+				where csgp2.player_id <> csgp.player_id
+					and csgp2.is_winner = true
+			)
+			then true
+			else false
+		 end is_loser
+		,csgp.score
+		,csgp.kills
+		,csgp.deaths
+		,csgp.gun_damage_dealt
+		,csgp.bomb_damage_dealt
+		,csgp.gun_damage_taken
+		,csgp.bomb_damage_taken
+		,csgp.self_damage
+		,csgp.gun_fire_count
+		,csgp.bomb_fire_count
+		,csgp.mine_fire_count
+		,csgp.gun_hit_count
+		,csgp.bomb_hit_count
+		,csgp.mine_hit_count
+	from cte_data as cd
+	inner join game_type as gt
+		on cd.game_type_id = gt.game_type_id
+	cross join cte_solo_game_participant as csgp
+	cross join cte_stat_periods as csp
+	where gt.is_solo = true
+)
+,cte_insert_player_solo_stats as(
+	insert into player_solo_stats(
+		 player_id
+		,stat_period_id
+		,games_played
+		,play_duration
+		,score
+		,wins
+		,losses
+		,kills
+		,deaths
+		,gun_damage_dealt
+		,bomb_damage_dealt
+		,gun_damage_taken
+		,bomb_damage_taken
+		,self_damage
+		,gun_fire_count
+		,bomb_fire_count
+		,mine_fire_count
+		,gun_hit_count
+		,bomb_hit_count
+		,mine_hit_count
+	)
+	select
+		 cs1.player_id
+		,cs1.stat_period_id
+		,1 as games_played
+		,cs1.play_duration
+		,cs1.score
+		,case when is_winner = true then 1 else 0 end as wins
+		,case when is_loser = true then 1 else 0 end as losses
+		,cs1.kills
+		,cs1.deaths
+		,cs1.gun_damage_dealt
+		,cs1.bomb_damage_dealt
+		,cs1.gun_damage_taken
+		,cs1.bomb_damage_taken
+		,cs1.self_damage
+		,cs1.gun_fire_count
+		,cs1.bomb_fire_count
+		,cs1.mine_fire_count
+		,cs1.gun_hit_count
+		,cs1.bomb_hit_count
+		,cs1.mine_hit_count
+	from cte_player_solo_stats cs1
+	where not exists(
+			select *
+			from player_solo_stats as pss
+			where pss.player_id = cs1.player_id
+				and pss.stat_period_id = cs1.stat_period_id
+		)
+	returning
+		 player_id
+		,stat_period_id
+)
+,cte_update_player_solo_stats as(
+	update player_solo_stats as p
+	set
+		 games_played = p.games_played + 1
+		,play_duration = p.play_duration + c.play_duration
+		,score = p.score + c.score
+		,wins = p.wins + case when c.is_winner = true then 1 else 0 end
+		,losses = p.losses + case when c.is_loser = true then 1 else 0 end
+		,kills = p.kills + c.kills
+		,deaths = p.deaths + c.deaths
+		,gun_damage_dealt = p.gun_damage_dealt + c.gun_damage_dealt
+		,bomb_damage_dealt = p.bomb_damage_dealt + c.bomb_damage_dealt
+		,gun_damage_taken = p.gun_damage_taken + c.gun_damage_taken
+		,bomb_damage_taken = p.bomb_damage_taken + c.bomb_damage_taken
+		,self_damage = p.self_damage + c.self_damage
+		,gun_fire_count = p.gun_fire_count + c.gun_fire_count
+		,bomb_fire_count = p.bomb_fire_count + c.bomb_fire_count
+		,mine_fire_count = p.mine_fire_count + c.mine_fire_count
+		,gun_hit_count = p.gun_hit_count + c.gun_hit_count
+		,bomb_hit_count = p.bomb_hit_count + c.bomb_hit_count
+		,mine_hit_count = p.mine_hit_count + c.mine_hit_count
+	from cte_player_solo_stats c
+	where p.player_id = c.player_id
+		and p.stat_period_id = c.stat_period_id
+		and not exists( -- not inserted
+			select *
+			from cte_insert_player_solo_stats as i
+			where i.player_id = p.player_id
+				and i.stat_period_id = p.stat_period_id
+		)
+)
 ,cte_player_versus_stats as(
 	select
 		 dt.player_id
