@@ -44,6 +44,10 @@ returns table(
 	,wasted_decoy player_versus_stats.wasted_decoy%type
 	,wasted_portal player_versus_stats.wasted_portal%type
 	,wasted_brick player_versus_stats.wasted_brick%type
+	,enemy_distance_sum player_versus_stats.enemy_distance_sum%type
+	,enemy_distance_samples player_versus_stats.enemy_distance_samples%type
+	,team_distance_sum player_versus_stats.team_distance_sum%type
+	,team_distance_samples player_versus_stats.team_distance_samples%type
 )
 language sql
 security definer
@@ -113,6 +117,10 @@ select
 	,pvs.wasted_decoy
 	,pvs.wasted_portal
 	,pvs.wasted_brick
+	,pvs.enemy_distance_sum
+	,pvs.enemy_distance_samples
+	,pvs.team_distance_sum
+	,pvs.team_distance_samples
 from(
 	select p.player_id
 	from player as p

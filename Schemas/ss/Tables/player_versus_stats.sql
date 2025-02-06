@@ -44,6 +44,10 @@ CREATE TABLE IF NOT EXISTS ss.player_versus_stats
     wasted_decoy bigint NOT NULL,
     wasted_portal bigint NOT NULL,
     wasted_brick bigint NOT NULL,
+    enemy_distance_sum bigint,
+    enemy_distance_samples bigint,
+    team_distance_sum bigint,
+    team_distance_samples bigint,
     CONSTRAINT player_versus_stats_pkey PRIMARY KEY (player_id, stat_period_id),
     CONSTRAINT player_versus_stats_player_id_fkey FOREIGN KEY (player_id)
         REFERENCES ss.player (player_id) MATCH SIMPLE

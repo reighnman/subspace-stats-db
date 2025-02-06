@@ -45,6 +45,10 @@ returns table(
 	,wasted_portal versus_game_team_member.wasted_portal%type
 	,wasted_brick versus_game_team_member.wasted_brick%type
 	,rating_change versus_game_team_member.rating_change%type
+	,enemy_distance_sum versus_game_team_member.enemy_distance_sum%type
+	,enemy_distance_samples versus_game_team_member.enemy_distance_samples%type
+	,team_distance_sum versus_game_team_member.team_distance_sum%type
+	,team_distance_samples versus_game_team_member.team_distance_samples%type
 )
 language plpgsql
 security definer
@@ -165,6 +169,10 @@ begin
 			,vgtm.wasted_portal
 			,vgtm.wasted_brick
 			,vgtm.rating_change
+			,vgtm.enemy_distance_sum
+			,vgtm.enemy_distance_samples
+			,vgtm.team_distance_sum
+			,vgtm.team_distance_samples
 		from game as g
 		inner join versus_game_team_member as vgtm
 			on g.game_id = vgtm.game_id

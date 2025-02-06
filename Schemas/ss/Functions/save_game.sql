@@ -870,6 +870,10 @@ with cte_data as(
 		,wasted_portal
 		,wasted_brick
 		,rating_change
+		,enemy_distance_sum
+		,enemy_distance_samples
+		,team_distance_sum
+		,team_distance_samples
 	)
 	select
 		 (select g.game_id from cte_game as g) as game_id
@@ -922,6 +926,10 @@ with cte_data as(
 		,coalesce(m.wasted_portal, 0)
 		,coalesce(m.wasted_brick, 0)
 		,m.rating_change
+		,m.enemy_distance_sum
+		,m.enemy_distance_samples
+		,m.team_distance_sum
+		,m.team_distance_samples
 	from cte_team_members as ctm
 	cross join jsonb_to_record(ctm.team_member_json) as m(
 		 play_duration interval
@@ -959,6 +967,10 @@ with cte_data as(
 		,wasted_portal smallint
 		,wasted_brick smallint
 		,rating_change integer
+		,enemy_distance_sum bigint
+		,enemy_distance_samples int
+		,team_distance_sum bigint
+		,team_distance_samples int
 	)
 	cross join jsonb_to_record(ctm.team_member_json->'ship_usage') as su(
 		 warbird interval
@@ -1010,6 +1022,10 @@ with cte_data as(
 		,wasted_portal
 		,wasted_brick
 		,rating_change
+		,enemy_distance_sum
+		,enemy_distance_samples
+		,team_distance_sum
+		,team_distance_samples
 )
 ,cte_events as(
 	select
@@ -1365,6 +1381,10 @@ with cte_data as(
 		,sum(dt.wasted_decoy) as wasted_decoy
 		,sum(dt.wasted_portal) as wasted_portal
 		,sum(dt.wasted_brick) as wasted_brick
+		,sum(dt.enemy_distance_sum) as enemy_distance_sum
+		,sum(dt.enemy_distance_samples) as enemy_distance_samples
+		,sum(dt.team_distance_sum) as team_distance_sum
+		,sum(dt.team_distance_samples) as team_distance_samples
 	from(
 		select
 			 cvtm.player_id
@@ -1416,6 +1436,10 @@ with cte_data as(
 			,cvtm.wasted_decoy
 			,cvtm.wasted_portal
 			,cvtm.wasted_brick
+			,cvtm.enemy_distance_sum
+			,cvtm.enemy_distance_samples
+			,cvtm.team_distance_sum
+			,cvtm.team_distance_samples
 		from cte_data as cd
 		inner join game_type as gt
 			on cd.game_type_id = gt.game_type_id
@@ -1471,6 +1495,10 @@ with cte_data as(
 		,wasted_decoy
 		,wasted_portal
 		,wasted_brick
+		,enemy_distance_sum
+		,enemy_distance_samples
+		,team_distance_sum
+		,team_distance_samples
 	)
 	select
 		 cpvs.player_id
@@ -1513,6 +1541,10 @@ with cte_data as(
 		,cpvs.wasted_decoy
 		,cpvs.wasted_portal
 		,cpvs.wasted_brick
+		,cpvs.enemy_distance_sum
+		,cpvs.enemy_distance_samples
+		,cpvs.team_distance_sum
+		,cpvs.team_distance_samples
 	from cte_player_versus_stats as cpvs
 	where not exists(
 			select *
@@ -1564,6 +1596,26 @@ with cte_data as(
 		,wasted_decoy = pvs.wasted_decoy + cpvs.wasted_decoy
 		,wasted_portal = pvs.wasted_portal + cpvs.wasted_portal
 		,wasted_brick = pvs.wasted_brick + cpvs.wasted_brick
+		,enemy_distance_sum = 
+			case when pvs.enemy_distance_sum is null and cpvs.enemy_distance_sum is null
+				then null
+				else coalesce(pvs.enemy_distance_sum, 0) + coalesce(cpvs.enemy_distance_sum, 0)
+			end
+		,enemy_distance_samples = 
+			case when pvs.enemy_distance_samples is null and cpvs.enemy_distance_samples is null
+				then null
+				else coalesce(pvs.enemy_distance_samples, 0) + coalesce(cpvs.enemy_distance_samples, 0)
+			end
+		,team_distance_sum = 
+			case when pvs.team_distance_sum is null and cpvs.team_distance_sum is null
+				then null
+				else coalesce(pvs.team_distance_sum, 0) + coalesce(cpvs.team_distance_sum, 0)
+			end
+		,team_distance_samples = 
+			case when pvs.team_distance_samples is null and cpvs.team_distance_samples is null
+				then null
+				else coalesce(pvs.team_distance_samples, 0) + coalesce(cpvs.team_distance_samples, 0)
+			end
 	from cte_player_versus_stats as cpvs
 	where pvs.player_id = cpvs.player_id
 		and pvs.stat_period_id = cpvs.stat_period_id

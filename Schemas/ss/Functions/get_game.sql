@@ -178,6 +178,10 @@ from(
 								,vgtm.wasted_portal
 								,vgtm.wasted_brick
 								,vgtm.rating_change
+								,vgtm.enemy_distance_sum
+								,vgtm.enemy_distance_samples
+								,vgtm.team_distance_sum
+								,vgtm.team_distance_samples
 							from versus_game_team_member as vgtm
 							inner join player as p
 								on vgtm.player_id = p.player_id

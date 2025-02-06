@@ -45,6 +45,10 @@ CREATE TABLE IF NOT EXISTS ss.versus_game_team_member
     wasted_portal smallint NOT NULL,
     wasted_brick smallint NOT NULL,
     rating_change integer NOT NULL,
+    enemy_distance_sum bigint,
+    enemy_distance_samples integer,
+    team_distance_sum bigint,
+    team_distance_samples integer,
     CONSTRAINT versus_game_team_member_pkey PRIMARY KEY (game_id, freq, slot_idx, member_idx),
     CONSTRAINT versus_game_team_member_game_id_freq_fkey FOREIGN KEY (game_id, freq)
         REFERENCES ss.versus_game_team (game_id, freq) MATCH SIMPLE
