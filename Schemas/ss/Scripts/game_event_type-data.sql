@@ -14,8 +14,7 @@ using(
 	on et.game_event_type_id = v.game_event_type_id
 when matched then
 	update set
-		 game_event_type_id = v.game_event_type_id
-		,game_event_type_description = v.game_event_type_description
+		 game_event_type_description = v.game_event_type_description
 when not matched then
 	insert(
 		 game_event_type_id

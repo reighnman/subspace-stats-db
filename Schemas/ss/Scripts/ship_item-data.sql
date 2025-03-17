@@ -14,8 +14,7 @@ using(
 	on se.ship_item_id = v.ship_item_id
 when matched then
 	update set
-		 ship_item_id = v.ship_item_id
-		,ship_item_name = v.ship_item_name
+		 ship_item_name = v.ship_item_name
 when not matched then
 	insert(
 		 ship_item_id
