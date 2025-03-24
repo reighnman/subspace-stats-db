@@ -9,6 +9,7 @@ CREATE TABLE IF NOT EXISTS ss.versus_game_team_member
     slot_idx smallint NOT NULL,
     member_idx smallint NOT NULL,
     player_id bigint NOT NULL,
+	premade_group smallint,
     play_duration interval NOT NULL,
     ship_mask smallint NOT NULL,
     lag_outs smallint NOT NULL,

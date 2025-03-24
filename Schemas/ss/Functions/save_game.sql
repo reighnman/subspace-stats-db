@@ -48,7 +48,6 @@ select ss.save_game('
 	"team_stats" : [
 		{
 			"freq" : 100,
-			"is_premade" : false,
 			"is_winner" : true,
 			"score" : 1,
 			"player_slots" : [
@@ -102,7 +101,6 @@ select ss.save_game('
 		},
 		{
 			"freq" : 200,
-			"is_premade" : false,
 			"is_winner" : false,
 			"score" : 0,
 			"player_slots" : [
@@ -505,7 +503,6 @@ with cte_data as(
 ,cte_team_stats as(
 	select
 		 t.freq
-		,t.is_premade
 		,t.is_winner
 		,t.score
 		,t.player_slots
@@ -515,7 +512,6 @@ with cte_data as(
 	cross join jsonb_array_elements(cd.team_stats) as j
 	cross join jsonb_to_record(j.value) as t(
 		 freq smallint
-		,is_premade boolean
 		,is_winner boolean
 		,score integer
 		,player_slots jsonb
@@ -526,14 +522,12 @@ with cte_data as(
 	insert into versus_game_team(
 		 game_id
 		,freq
-		,is_premade
 		,is_winner
 		,score
 	)
 	select
 		 (select g.game_id from cte_game as g) as game_id
 		,ct.freq
-		,ct.is_premade
 		,ct.is_winner
 		,ct.score
 	from cte_team_stats as ct
@@ -834,6 +828,7 @@ with cte_data as(
 		,slot_idx
 		,member_idx
 		,player_id
+		,premade_group
 		,play_duration
 		,ship_mask
 		,lag_outs
@@ -881,6 +876,7 @@ with cte_data as(
 		,ctm.slot_idx
 		,ctm.member_idx
 		,p.player_id
+		,premade_group
 		,m.play_duration
 		,cast(( 
 			  case when su.warbird > cast('0' as interval) then 1 else 0 end
@@ -932,7 +928,8 @@ with cte_data as(
 		,m.team_distance_samples
 	from cte_team_members as ctm
 	cross join jsonb_to_record(ctm.team_member_json) as m(
-		 play_duration interval
+		 premade_group smallint
+		,play_duration interval
 		,lag_outs smallint
 		,kills smallint
 		,deaths smallint

@@ -132,7 +132,6 @@ from(
 		  	from(
 				select
 					 vgt.freq
-					,vgt.is_premade
 					,vgt.is_winner
 					,vgt.score
 					,(	select json_agg(mdt)
@@ -142,6 +141,7 @@ from(
 								,vgtm.member_idx
 								,p.player_name as player
 								,s.squad_name as squad
+								,vgtm.premade_group
 								,vgtm.play_duration
 								,vgtm.ship_mask
 								,vgtm.lag_outs

@@ -6,7 +6,6 @@ CREATE TABLE IF NOT EXISTS ss.versus_game_team
 (
     game_id bigint NOT NULL,
     freq smallint NOT NULL,
-    is_premade boolean NOT NULL,
     is_winner boolean NOT NULL,
     score integer NOT NULL,
     CONSTRAINT versus_game_team_pkey PRIMARY KEY (game_id, freq),
