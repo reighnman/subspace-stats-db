@@ -2,7 +2,7 @@
 
 This folder contains the change scripts for each release. If you're running an old version of the database, these scripts can be used to migrate your existing database to a newer version.
 
-The scripts are named by date and version # to make it easy to determine which script(s) to run and in what order. To ensure compatibilty, the major version # of the database, subspace-stats website, and Subspace Server .NET zone server and SS.Matchmaking module should match each other.
+The scripts are named by date and version # to make it easy to determine which script(s) to run and in what order.
 
 ### Upgrade instructions:
 

@@ -28,23 +28,6 @@ Before we get started, it's good to know some `psql` basics:
 
 > Note: In `pqsl`, **postgres=#** is the terminal prompt. In the following code snippets, you do not type that part.
 
-### Create the database
-
-In the `psql` terminal, create a new database by running the following:
-
-```SQL
-CREATE DATABASE subspacestats;
-```
-
-> You can specify a different database name if that's what you prefer.
-
-It will look like:
-
-```
-postgres=# CREATE DATABASE subspacestats;
-CREATE DATABASE
-```
-
 ### Create Roles
 
 Next, let's create roles for the database. Here are the roles we'll be creating, and their purpose.
@@ -150,6 +133,40 @@ CREATE USER YourUserNameHere WITH PASSWORD 'changeme';
 GRANT ss_developer TO YourUserNameHere;
 ```
 
+### Create the database
+
+In the `psql` terminal, create a new database by running the following:
+
+```SQL
+CREATE DATABASE subspacestats
+    WITH
+    OWNER = ss_developer
+    ENCODING = 'UTF8'
+    LOCALE_PROVIDER = 'libc';
+
+ALTER DATABASE subspacestats
+    SET search_path TO ss;
+```
+
+> You can specify a different database name if that's what you prefer.
+
+It will look like:
+
+```
+postgres=# CREATE DATABASE subspacestats
+    WITH
+    OWNER = ss_developer
+    ENCODING = 'UTF8'
+    LOCALE_PROVIDER = 'libc';
+
+ALTER DATABASE subspacestats
+    SET search_path TO ss;
+CREATE DATABASE
+ALTER DATABASE
+```
+
+### Close the `psql` terminal
+
 We're done running commands in `psql`. Quit out with `\q`:
 
 It will looks like:
@@ -158,13 +175,13 @@ It will looks like:
 postgres=# \q
 ```
 
-### Load a release of subspace-stats-db into the database
-
-In your shell, switch to the `postgres` account:
+You'll be back at the terminal which you can exit:
 
 ```ShellSession
-$ sudo -i -u postgres
+$ exit
 ```
+
+### Load a release of subspace-stats-db into the database
 
 Download a release from [subspace-stats-db releases](https://github.com/gigamon-dev/subspace-stats-db/releases). Most likely you'll want the latest version. You can use this file to "restore" into the database you just created.
 
@@ -176,11 +193,19 @@ $ curl -O <url>
 
 Run `pg_restore` with the following command:
 
-> Replace the file name with the one you downloaded. Also, if you chose a different database name earlier, you'll need to adjust `--dbname=` as well.
-
 ```ShellSession
-$ pg_restore --dbname=subspacestats --verbose subspacestats.sql
+$ pg_restore -d subspacestats -v -h localhost -p 5432 -U postgres subspacestats.sql
 ```
+
+`-d` is the database name. If you chose a different database name earlier, you'll need to adjust it.
+
+`-v` tells it to output verbose info.
+
+`-h` specifies to the hostname of the machine on which the server is running
+
+`-p` specifies the port #, which by default is 5432
+
+Replace the file name with the one you downloaded.
 
 ### Configure PostgreSQL Client Authentication
 
