@@ -91,6 +91,10 @@ begin
 		,wasted_decoy
 		,wasted_portal
 		,wasted_brick
+		,enemy_distance_sum
+		,enemy_distance_samples
+		,team_distance_sum
+		,team_distance_samples
 	)
 	select
 		 dt.player_id
@@ -133,6 +137,10 @@ begin
 		,sum(dt.wasted_decoy) as wasted_decoy
 		,sum(dt.wasted_portal) as wasted_portal
 		,sum(dt.wasted_brick) as wasted_brick
+		,sum(enemy_distance_sum) as enemy_distance_sum
+		,sum(enemy_distance_samples) as enemy_distance_samples
+		,sum(team_distance_sum) as team_distance_sum
+		,sum(team_distance_samples) as team_distance_samples
 	from(
 		select
 			 vgtm.game_id
@@ -183,6 +191,10 @@ begin
 			,vgtm.wasted_decoy
 			,vgtm.wasted_portal
 			,vgtm.wasted_brick
+			,enemy_distance_sum
+			,enemy_distance_samples
+			,team_distance_sum
+			,team_distance_samples
 		from game as g	
 		inner join versus_game_team_member as vgtm
 			on g.game_id = vgtm.game_id
