@@ -30,7 +30,10 @@ select * from player_rating;
 
 declare
 	l_game_type_id game_type.game_type_id%type;
-	l_period_range tstzrange;
+	l_period_range stat_period.period_range%type;
+	l_is_rating_enabled stat_tracking.is_rating_enabled%type;
+	l_initial_rating stat_tracking.initial_rating%type;
+	l_minimum_rating stat_tracking.minimum_rating%type;
 begin
 	select
 		 st.game_type_id
@@ -195,7 +198,7 @@ begin
 			,enemy_distance_samples
 			,team_distance_sum
 			,team_distance_samples
-		from game as g	
+		from game as g
 		inner join versus_game_team_member as vgtm
 			on g.game_id = vgtm.game_id
 		inner join versus_game_team as vgt
@@ -205,5 +208,26 @@ begin
 			and l_period_range @> g.time_played
 	) as dt
 	group by dt.player_id;
+
+	if l_is_rating_enabled = true then
+		delete from player_rating
+		where stat_period_id = p_stat_period_id;
+
+		insert into player_rating(
+			 player_id
+			,stat_period_id
+			,rating
+		)
+		select
+			 vgtm.player_id
+			,p_stat_period_id
+			,greatest(l_initial_rating + sum(vgtm.rating_change), l_minimum_rating) as rating
+		from game as g
+		inner join versus_game_team_member as vgtm
+			on g.game_id = vgtm.game_id
+		where g.game_type_id = l_game_type_id
+			and l_period_range @> g.time_played
+		group by vgtm.player_id;
+	end if;
 end;
 $$;
