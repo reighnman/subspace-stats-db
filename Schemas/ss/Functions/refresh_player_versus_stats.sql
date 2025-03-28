@@ -38,9 +38,15 @@ begin
 	select
 		 st.game_type_id
 		,sp.period_range
+		,st.is_rating_enabled
+		,st.initial_rating
+		,st.minimum_rating
 	into
 		 l_game_type_id
 		,l_period_range
+		,l_is_rating_enabled
+		,l_initial_rating
+		,l_minimum_rating
 	from stat_period as sp
 	inner join stat_tracking as st
 		on sp.stat_tracking_id = st.stat_tracking_id
