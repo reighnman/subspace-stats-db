@@ -977,20 +977,25 @@ when not matched then
 merge into game_type as gt
 using(
 	values
-		 (1,'SVS - Duel (1v1)',true,false,false)
-		,(2,'SVS - 2v2 public', false, true, false)
-		,(3,'SVS - 3v3 public', false, true, false)
-		,(4,'SVS - 4v4 public', false, true, false)
-		,(5,'PowerBall - Traditional', false, false, true)
-		,(6,'PowerBall - Proball', false, false, true)
-		,(7,'PowerBall - Smallpub', false, false, true)
-		,(8,'PowerBall - 3h', false, false, true)
-		,(9,'PowerBall - small4tmpb', false, false, true)
-		,(10,'PowerBall - minipub', false, false, true)
-		,(11,'PowerBall - mediumpub', false, false, true)
-		,(12,'SVS - 4v4 league', false, true, false)
-		,(13,'SVS - Solo FFA - 1 player/team', true, false, false)
-		,(14,'SVS - Team FFA - 2 players/team', false, true, false)
+		 (1,'Public - Duel (box)',false,true,false)
+        ,(2,'Public - 1v1 (obstacle)',false,true,false)
+		,(3,'Public - 2v2 (box)', false, true, false)
+		,(4,'Public - 2v2 (obstacle)', false, true, false)
+		,(5,'Public - 3v3 (obstacle)', false, true, false)
+		,(6,'Public - 4v4 (obstacle)', false, true, false)
+		,(7,'SVS - 4v4 league', false, true, false)
+		,(8,'SVS - 4v4 prac', false, true, false)
+		,(9,'SVS - 4v4 matchmaking', false, true, false)
+		,(10,'SVS - Solo FFA - 1 player/team', true, false, false)
+		,(11,'SVS - Team FFA - 2 players/team', false, true, false)
+        ,(12,'PowerBall - Traditional', false, false, true)
+		,(13,'PowerBall - Proball', false, false, true)
+		,(14,'PowerBall - Smallpub', false, false, true)
+		,(15,'PowerBall - 3h', false, false, true)
+		,(16,'PowerBall - small4tmpb', false, false, true)
+		,(17,'PowerBall - minipub', false, false, true)
+		,(18,'PowerBall - mediumpub', false, false, true)
+        ,(19,'Chaos',true,false,false)
 ) as v(game_type_id, game_type_description, is_solo, is_team_versus, is_pb)
 	on gt.game_type_id = v.game_type_id
 when matched then
@@ -1086,13 +1091,44 @@ using(
 		 end as IsInUse
 	from(
 		values
-			 (1, 4, 1, true, true, 500, 100) -- 4v4 Monthly
-			,(2, 2, 1, true, true, 500, 100) -- 2v2 Monthly
-			,(3, 2, 0, true, false, null, null) -- 2v2 Forever
-			,(4, 4, 0, true, false, null, null) -- 4v4 Forever
-			,(5, 1, 0, true, false, null, null) -- 1v1 Forever
-			,(6, 3, 0, true, false, null, null) -- 3v3 Forever
-			,(7, 3, 1, true, true, 500, 100) -- 3v3 Monthly
+			 (1, 1, 1, true, true, 500, 100) -- Duel (box/cicle) Monthly
+            ,(2, 1, 0, false, null, null) -- Duel (box) Forever
+			,(3, 2, 1, true, true, 500, 100) -- 1v1 (obstacle) Monthly
+			,(4, 2, 0, false, null, null) -- 1v1 (obstacle) Forever
+			,(5, 3, 1, true, true, 500, 100) -- 2v2 (box) Monthly
+			,(6, 3, 0, false, null, null) -- 2v2 (box) Forever
+			,(7, 4, 1, true, true, 500, 100) -- 2v2 (obstacle) Monthly
+			,(8, 4, 0, false, null, null) -- 2v2 (obstacle) Forever
+			,(9, 5, 1, true, true, 500, 100) -- 3v3 (obstacle) Monthly
+			,(10, 5, 0, false, null, null) -- 3v3 (obstacle) Forever
+			,(11, 6, 1, true, true, 500, 100) -- 4v4 (obstacle) Monthly
+			,(12, 6, 0, false, null, null) -- 4v4 (obstacle) Forever
+			,(13, 7, 1, true, true, 500, 100) -- 4v4 (league) Monthly
+			,(14, 7, 0, false, null, null) -- 4v4 (league) Forever
+			,(15, 8, 1, true, true, 500, 100) -- 4v4 (prac) Monthly
+			,(16, 8, 0, false, null, null)-- 4v4 (prac) Forever
+			,(17, 9, 1, true, true, 500, 100) -- 4v4 (matchmaking) Monthly
+			,(18, 9, 0, false, null, null)-- 4v4 (matchmaking) Forever
+			,(19, 10, 1, true, true, 500, 100) -- Solo FFA Monthly
+			,(20, 10, 0, false, null, null) -- Solo FFA Forever
+            ,(21, 11, 1, true, true, 500, 100) -- Team FFA Monthly
+			,(22, 11, 0, false, null, null) -- Team FFA Forever
+            ,(23, 12, 1, true, true, 500, 100) -- PB Traditional Monthly
+			,(24, 12, 0, false, null, null) -- PB Traditional FFA Forever
+            ,(25, 13, 1, true, true, 500, 100) -- PB Proball Monthly
+			,(26, 13, 0, false, null, null) -- PB Proball Forever
+            ,(27, 14, 1, true, true, 500, 100) -- PB Smallpub Monthly
+			,(28, 14, 0, false, null, null) -- PB Smallpub FFA Forever
+            ,(29, 15, 1, true, true, 500, 100) -- PB 3h Monthly
+			,(30, 15, 0, false, null, null) -- PB 3h Forever
+            ,(31, 16, 1, true, true, 500, 100) -- PB small4tmpb Monthly
+			,(32, 16, 0, false, null, null) -- PB small4tmpb Forever
+            ,(33, 17, 1, true, true, 500, 100) -- PB minipub Monthly
+			,(34, 17, 0, true, false, null, null) -- PB minpub Forever
+            ,(35, 18, 1, true, true, 500, 100) -- PB mediumpub Monthly
+			,(36, 18, 0, true, false, null, null) -- PB mediumpub Forever
+            ,(37, 19, 1, true, true, 500, 100) -- PB mediumpub Monthly
+			,(38, 19, 0, true, false, null, null) -- PB mediumpub Forever
 	) as v(stat_tracking_id, game_type_id, stat_period_type_id, is_auto_generate_period, is_rating_enabled, initial_rating, minimum_rating)
 ) as dv
 	on st.stat_tracking_id = dv.stat_tracking_id
