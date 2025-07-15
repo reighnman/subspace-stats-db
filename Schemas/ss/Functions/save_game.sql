@@ -1654,7 +1654,8 @@ with cte_data as(
 				and pr.stat_period_id = csp.stat_period_id
 		)
 	returning
-		stat_period_id
+		 player_id
+		,stat_period_id
 )
 ,cte_update_player_rating as(
 	update player_rating as pr
@@ -1669,10 +1670,12 @@ with cte_data as(
 	) as dt
 	where csp.is_rating_enabled = true
 		and pr.player_id = dt.player_id
+		and pr.stat_period_id = csp.stat_period_id
 		and not exists( -- TODO: this might not be needed since this cte can't see the rows inserted by cte_insert_player_rating?
 			select *
 			from cte_insert_player_rating as i
-			where i.stat_period_id = csp.stat_period_id
+			where i.player_id = dt.player_id
+				and i.stat_period_id = csp.stat_period_id
 		)
 )
 ,cte_update_player_ship_usage as(
