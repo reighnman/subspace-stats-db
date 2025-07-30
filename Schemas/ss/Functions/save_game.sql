@@ -1423,8 +1423,8 @@ with cte_data as(
 			,cvtm.bullet_hit_count
 			,cvtm.bomb_hit_count
 			,cvtm.mine_hit_count
-			,case when cvtm.first_out = 1 then true else false end as first_out_regular
-			,case when cvtm.first_out = 2 then true else false end as first_out_critical
+			,cvtm.first_out & 1 <> 0 as first_out_regular
+			,cvtm.first_out & 2 <> 0 as first_out_critical
 			,cvtm.wasted_energy
 			,cvtm.wasted_repel
 			,cvtm.wasted_rocket

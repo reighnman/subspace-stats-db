@@ -65,7 +65,7 @@ select
 	,pvs.forced_rep_damage
 	,pvs.assists
 	,pvs.wasted_energy
-	,pvs.first_out_regular + pvs.first_out_critical as first_out
+	,pvs.first_out_regular as first_out
 from player_versus_stats as pvs
 inner join player as p
 	on pvs.player_id = p.player_id

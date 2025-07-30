@@ -190,8 +190,8 @@ begin
 			,vgtm.bullet_hit_count
 			,vgtm.bomb_hit_count
 			,vgtm.mine_hit_count
-			,case when vgtm.first_out = 1 then true else false end as first_out_regular
-			,case when vgtm.first_out = 2 then true else false end as first_out_critical
+			,vgtm.first_out & 1 <> 0 as first_out_regular
+			,vgtm.first_out & 2 <> 0 as first_out_critical
 			,vgtm.wasted_energy
 			,vgtm.wasted_repel
 			,vgtm.wasted_rocket
