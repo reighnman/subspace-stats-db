@@ -5,9 +5,9 @@
 CREATE TABLE IF NOT EXISTS league.season
 (
     season_id bigint NOT NULL GENERATED ALWAYS AS IDENTITY ( INCREMENT 1 START 1 MINVALUE 1 MAXVALUE 9223372036854775807 CACHE 1 ),
-    season_name character varying(20) COLLATE pg_catalog."default" NOT NULL,
+    season_name character varying(128) COLLATE pg_catalog."default" NOT NULL,
     league_id bigint NOT NULL,
-    created_timestamp timestamp with time zone NOT NULL,
+    created_timestamp timestamp with time zone NOT NULL DEFAULT CURRENT_TIMESTAMP,
     start_date date,
     end_date date,
     stat_period_id bigint,

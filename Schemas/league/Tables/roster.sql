@@ -6,10 +6,11 @@ CREATE TABLE IF NOT EXISTS league.roster
 (
     season_id bigint NOT NULL,
     player_id bigint NOT NULL,
-    signup_timestamp time with time zone NOT NULL,
+    signup_timestamp timestamp with time zone NOT NULL,
     team_id bigint,
     enroll_timestamp timestamp with time zone,
     is_captain boolean NOT NULL,
+    is_suspended boolean NOT NULL DEFAULT false,
     CONSTRAINT roster_pkey PRIMARY KEY (season_id, player_id),
     CONSTRAINT roster_player_id_fkey FOREIGN KEY (player_id)
         REFERENCES ss.player (player_id) MATCH SIMPLE
