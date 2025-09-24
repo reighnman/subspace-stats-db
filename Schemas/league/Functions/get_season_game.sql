@@ -55,9 +55,12 @@ from(
 	select
 		 sg.season_game_id
 		,l.game_type_id
+		,l.league_id
 		,l.league_name
+		,s.season_id
 		,s.season_name
 		,sg.round_number
+		,sr.round_name
 		,sg.scheduled_timestamp
 		,(	select json_object_agg(dt2.freq, json_build_object('team_id', dt2.team_id, 'team_name', dt2.team_name, 'roster', dt2.roster))
 			from(
@@ -84,6 +87,9 @@ from(
 		on sg.season_id = s.season_id
 	inner join league.league as l
 		on s.league_id = l.league_id
+	left outer join league.season_round as sr
+		on sg.season_id = sr.season_id
+			and sg.round_number = sr.round_number
 	where sg.season_game_id = p_season_game_id
 ) as dt;
 
