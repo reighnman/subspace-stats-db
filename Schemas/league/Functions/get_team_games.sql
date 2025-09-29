@@ -2,7 +2,8 @@ create or replace function league.get_team_games(
 	 p_team_id league.team.team_id%type
 )
 returns table(
-	 round_number league.season_game.round_number%type
+	 season_game_id league.season_game.season_game_id%type
+	,round_number league.season_game.round_number%type
 	,round_name league.season_round.round_name%type
 	,game_timestamp timestamp with time zone
 	,game_id league.season_game.game_id%type
@@ -29,7 +30,8 @@ select * from league.season_game
 */
 
 select
-	 sg.round_number
+	 sg.season_game_id
+	,sg.round_number
 	,sr.round_name
 	,coalesce(upper(g.time_played), sg.scheduled_timestamp) as game_timestamp
 	,sg.game_id
@@ -69,7 +71,7 @@ select
 			end
 		)
 	 end as win_lose_draw
-	,(	select string_agg(cast(sgt2.score as text), ' vs ' order by freq)
+	,(	select string_agg(cast(sgt2.score as text), ' - ' order by freq)
 		from league.season_game_team as sgt2
 		where sgt2.season_game_id = sgt.season_game_id
 	 ) as scores

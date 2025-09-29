@@ -4,7 +4,7 @@
 
 CREATE TABLE IF NOT EXISTS ss.stat_tracking
 (
-    stat_tracking_id bigint NOT NULL,
+    stat_tracking_id bigint NOT NULL GENERATED ALWAYS AS IDENTITY ( INCREMENT 1 START 1 MINVALUE 1 MAXVALUE 9223372036854775807 CACHE 1 ),
     game_type_id bigint NOT NULL,
     stat_period_type_id bigint NOT NULL,
     is_auto_generate_period boolean NOT NULL,

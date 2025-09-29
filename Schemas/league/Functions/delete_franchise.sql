@@ -3,6 +3,8 @@ create or replace function league.delete_franchise(
 )
 returns void
 language sql
+security definer
+set search_path = league, pg_temp
 as
 $$
 

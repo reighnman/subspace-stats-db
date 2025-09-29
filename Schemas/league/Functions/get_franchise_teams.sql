@@ -8,6 +8,8 @@ returns table(
 	,season_name league.season.season_name%type
 )
 language sql
+security definer
+set search_path = league, pg_temp
 as
 $$
 

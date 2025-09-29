@@ -7,6 +7,8 @@ returns table(
 	,created_timestamp league.season.created_timestamp%type
 )
 language sql
+security definer
+set search_path = league, pg_temp
 as
 $$
 

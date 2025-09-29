@@ -5,6 +5,8 @@ returns table(
 	,teams text
 )
 language sql
+security definer
+set search_path = league, pg_temp
 as
 $$
 
@@ -19,12 +21,19 @@ select * from league.get_franchises_with_teams();
 select
 	 f.franchise_id
 	,f.franchise_name
-	,string_agg(t.team_name, ', ' order by s.start_date) as teams
+	,(	select string_agg(dt.team_name, ', ' order by dt.last_used nulls last)
+		from(
+			select
+				 t.team_name
+				,max(s.start_date) as last_used
+			from league.team as t
+			inner join league.season as s
+				on t.season_id = s.season_id
+			where t.franchise_id = f.franchise_id
+			group by t.team_name
+		) as dt
+	 ) as teams
 from league.franchise as f
-left outer join league.team as t
-	on f.franchise_id = t.franchise_id
-left outer join league.season as s
-	on t.season_id = s.season_id
 group by f.franchise_id
 order by f.franchise_name;
 

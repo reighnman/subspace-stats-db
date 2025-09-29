@@ -5,6 +5,8 @@ create or replace function league.update_league(
 )
 returns void
 language sql
+security definer
+set search_path = league, pg_temp
 as
 $$
 
