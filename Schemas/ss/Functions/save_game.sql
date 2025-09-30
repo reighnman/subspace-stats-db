@@ -498,7 +498,7 @@ with cte_data as(
 	cross join jsonb_to_record(s.value) as par(
 		player character varying
 	)
-	where gt.is_solo = true
+	where gt.game_mode_id = 1 -- 1v1
 )
 ,cte_team_stats as(
 	select
@@ -516,7 +516,7 @@ with cte_data as(
 		,score integer
 		,player_slots jsonb
 	)
-	where gt.is_team_versus = true
+	where gt.game_mode_id = 2 -- Team Versus
 )
 ,cte_versus_team as(
 	insert into versus_game_team(
@@ -560,7 +560,7 @@ with cte_data as(
 	cross join jsonb_to_record(s.value) as t(
 		 freq smallint
 	)
-	where gt.is_pb = true
+	where gt.game_mode_id = 3 -- Powerball
 )
 ,cte_pb_participants as(
 	select
@@ -1245,11 +1245,8 @@ with cte_data as(
 		,csgp.bomb_hit_count
 		,csgp.mine_hit_count
 	from cte_data as cd
-	inner join game_type as gt
-		on cd.game_type_id = gt.game_type_id
 	cross join cte_solo_game_participant as csgp
 	cross join cte_stat_periods as csp
-	where gt.is_solo = true
 )
 ,cte_insert_player_solo_stats as(
 	insert into player_solo_stats(
@@ -1438,13 +1435,10 @@ with cte_data as(
 			,cvtm.team_distance_sum
 			,cvtm.team_distance_samples
 		from cte_data as cd
-		inner join game_type as gt
-			on cd.game_type_id = gt.game_type_id
 		cross join cte_versus_team_member as cvtm
 		inner join cte_versus_team as cvt
 			on cvtm.freq = cvt.freq
 		cross join cte_stat_periods as csp
-		where gt.is_team_versus = true
 	) as dt
 	group by -- in case the player played on multiple teams
 		 dt.player_id

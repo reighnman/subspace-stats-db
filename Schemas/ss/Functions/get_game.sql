@@ -195,7 +195,7 @@ from(
 						) as mdt
 					 ) as members
 				from versus_game_team as vgt
-				where gt.is_team_versus = true
+				where gt.game_mode_id = 2 -- Team Versus
 					and vgt.game_id = g.game_id
 				order by vgt.freq
 			) as tdt

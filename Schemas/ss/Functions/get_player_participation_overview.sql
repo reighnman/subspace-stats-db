@@ -60,7 +60,7 @@ begin
 			 ,st.stat_period_type_id
 			 ,sp.period_range
 			 ,pr.rating
-			 ,case when gt.is_team_versus = true then(
+			 ,case when gt.game_mode_id = 2 then( -- Team Versus
 				 	select to_json(dt.*)
 				 	from(
 						select
@@ -92,7 +92,7 @@ begin
 						group by vgtm.player_id
 					) as dt
 				)
-				when gt.is_solo then(
+				when gt.game_mode_id = 1 then( -- 1v1
 					select to_json(dt.*)
 				 	from(
 						select
@@ -106,7 +106,7 @@ begin
 							and g.game_type_id = st.game_type_id
 					) as dt
 				)
--- 				when gt.is_pb then(
+-- 				when gt.game_mode_id = 3 then( -- Powerball
 -- 				)
 			  end as details_json
 		from(

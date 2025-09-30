@@ -1,7 +1,8 @@
 create or replace function ss.get_game_types()
 returns table(
 	 game_type_id ss.game_type.game_type_id%type
-	,game_type_description ss.game_type.game_type_description%type
+	,game_type_name ss.game_type.game_type_name%type
+	,game_mode_id ss.game_type.game_mode_id%type
 )
 language sql
 security definer
@@ -16,10 +17,10 @@ select * from ss.get_game_types();
 
 select
 	 gt.game_type_id
-	,gt.game_type_description
+	,gt.game_type_name
+	,gt.game_mode_id
 from ss.game_type as gt
-order by game_type_description;
-
+order by gt.game_type_name;
 $$;
 
 alter function ss.get_game_types owner to ss_developer;

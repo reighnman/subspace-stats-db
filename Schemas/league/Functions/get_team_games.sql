@@ -47,9 +47,9 @@ select
 			inner join ss.game_type as gt
 				on g.game_type_id = gt.game_type_id
 			where g.game_id = sg.game_id
-				and gt.is_team_versus = true
+				and gt.game_mode_id = 2 -- Team Versus
 		)
-		then( -- team versus
+		then( -- Team Versus
 			case when exists(
 					select *
 					from ss.versus_game_team as vgt

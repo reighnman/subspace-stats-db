@@ -31,7 +31,7 @@ begin
 		inner join ss.game_type as gt
 			on g.game_type_id = gt.game_type_id
 		where g.game_id = l_game_id
-			and gt.is_team_versus = true
+			and gt.game_mode_id = 2 -- Team Versus
 	) then
 		-- Team Versus
 		update league.season_game_team as sgt

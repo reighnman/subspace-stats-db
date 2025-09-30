@@ -98,7 +98,7 @@ begin
 	inner join game_type as gt
 		on st.game_type_id = gt.game_type_id
 	where sp.stat_period_id = p_stat_period_id
-		and gt.is_team_versus = true;
+		and gt.game_mode_id = 2; -- Team Versus
 	
 	if l_period_range is null then
 		raise exception 'Invalid stat period specified. (%)', p_stat_period_id;
