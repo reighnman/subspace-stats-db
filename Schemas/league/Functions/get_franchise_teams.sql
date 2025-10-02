@@ -6,6 +6,8 @@ returns table(
 	,team_name league.team.team_name%type
 	,season_id league.season.season_id%type
 	,season_name league.season.season_name%type
+	,league_id league.league.league_id%type
+	,league_name league.league.league_name%type
 )
 language sql
 security definer
@@ -27,9 +29,13 @@ select
 	,t.team_name
 	,s.season_id
 	,s.season_name
+	,l.league_id
+	,l.league_name
 from league.team as t
 inner join league.season as s
 	on t.season_id = s.season_id
+inner join league.league as l
+	on s.league_id = l.league_id
 where t.franchise_id = p_franchise_id
 order by coalesce(s.start_date, s.created_timestamp);
 

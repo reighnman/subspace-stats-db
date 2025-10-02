@@ -1,4 +1,4 @@
-create function league.copy_season(
+create or replace function league.copy_season(
 	 p_season_id league.season.season_id%type
 	,p_season_name league.season.season_name%type
 	,p_include_players boolean
@@ -8,6 +8,8 @@ create function league.copy_season(
 )
 returns league.season.season_id%type
 language sql
+security definer
+set search_path = league, pg_temp
 as
 $$
 
@@ -162,3 +164,9 @@ select cs.season_id
 from cte_season as cs;
 
 $$;
+
+alter function league.copy_season owner to ss_developer;
+
+revoke all on function league.copy_season from public;
+
+grant execute on function league.copy_season to ss_web_server;
