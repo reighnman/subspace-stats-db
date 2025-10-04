@@ -7,6 +7,8 @@ create or replace function league.insert_team(
 )
 returns league.team.team_id%type
 language sql
+security definer
+set search_path = league, pg_temp
 as
 $$
 

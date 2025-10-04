@@ -6,10 +6,10 @@ CREATE TABLE IF NOT EXISTS league.roster
 (
     season_id bigint NOT NULL,
     player_id bigint NOT NULL,
-    signup_timestamp timestamp with time zone NOT NULL,
+    signup_timestamp timestamp with time zone NOT NULL DEFAULT CURRENT_TIMESTAMP,
     team_id bigint,
     enroll_timestamp timestamp with time zone,
-    is_captain boolean NOT NULL,
+    is_captain boolean NOT NULL DEFAULT false,
     is_suspended boolean NOT NULL DEFAULT false,
     CONSTRAINT roster_pkey PRIMARY KEY (season_id, player_id),
     CONSTRAINT roster_player_id_fkey FOREIGN KEY (player_id)
@@ -34,5 +34,5 @@ CREATE INDEX IF NOT EXISTS roster_player_id_season_id_idx
     ON league.roster USING btree
     (player_id ASC NULLS LAST)
     INCLUDE(season_id)
-    WITH (deduplicate_items=True)
+    WITH (fillfactor=100, deduplicate_items=True)
     TABLESPACE pg_default;

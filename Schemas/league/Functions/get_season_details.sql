@@ -3,6 +3,8 @@ create or replace function league.get_season_details(
 )
 returns table(
 	 season_name league.season.season_name%type
+	,league_id league.league.league_id%type
+	,league_name league.league.league_name%type
 	,created_timestamp league.season.created_timestamp%type
 	,start_date league.season.start_date%type
 	,end_date league.season.end_date%type
@@ -24,6 +26,8 @@ select * from league.get_season_details(2);
 
 select
 	 s.season_name
+	,l.league_id
+	,l.league_name
 	,s.created_timestamp
 	,s.start_date
 	,s.end_date

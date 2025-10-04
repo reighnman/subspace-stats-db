@@ -4,6 +4,8 @@ returns table(
 	,franchise_name league.franchise.franchise_name%type
 )
 language sql
+security definer
+set search_path = league, pg_temp
 as
 $$
 
@@ -18,7 +20,8 @@ select * from league.get_franchises();
 select
 	 franchise_id
 	,franchise_name
-from league.franchise;
+from league.franchise
+order by franchise_name;
 
 $$;
 

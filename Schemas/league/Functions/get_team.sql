@@ -3,6 +3,7 @@ create or replace function league.get_team(
 )
 returns table(
 	 team_name league.team.team_name%type
+	,season_id league.team.season_id%type
 	,banner_small league.team.banner_small%type
 	,banner_large league.team.banner_large%type
 	,is_enabled league.team.is_enabled%type
@@ -21,6 +22,7 @@ select * from league.get_team(1);
 
 select
 	 t.team_name
+	,t.season_id
 	,t.banner_small
 	,t.banner_large
 	,t.is_enabled
