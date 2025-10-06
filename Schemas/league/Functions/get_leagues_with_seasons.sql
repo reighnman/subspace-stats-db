@@ -7,7 +7,7 @@ as
 $$
 
 /*
-For populating the 
+Gets the available leagues and their seasons.
 
 Usage:
 select league.get_leagues_with_seasons();
@@ -25,8 +25,9 @@ from(
 					,s.season_name
 				from league.season as s
 				where s.league_id = dt.league_id
-					and s.start_date is not null
-				order by s.start_date desc
+				order by
+					 s.start_date desc nulls last
+					,s.season_name 
 			) as sdt
 		 ) as seasons
 	from(
@@ -40,10 +41,14 @@ from(
 				limit 1
 			) as latest_season_start_date
 		from league.league as l
+		where exists(
+				select *
+				from league.season as s
+				where s.league_id = l.league_id
+			)
 	) as dt
-	where dt.latest_season_start_date is not null
 	order by
-		 dt.latest_season_start_date desc
+		 dt.latest_season_start_date desc nulls last
 		,dt.league_name
 ) as dt2
 

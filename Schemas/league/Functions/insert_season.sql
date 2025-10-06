@@ -4,6 +4,8 @@ create or replace function league.insert_season(
 )
 returns league.season.season_id%type
 language sql
+security definer
+set search_path = league, pg_temp
 as
 $$
 

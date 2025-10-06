@@ -13,7 +13,6 @@ CREATE TABLE IF NOT EXISTS league.league
         REFERENCES ss.game_type (game_type_id) MATCH SIMPLE
         ON UPDATE NO ACTION
         ON DELETE NO ACTION
-        NOT VALID
 )
 
 TABLESPACE pg_default;

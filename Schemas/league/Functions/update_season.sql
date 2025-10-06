@@ -1,28 +1,22 @@
 create or replace function league.update_season(
 	 p_season_id league.season.season_id%type
 	,p_season_name league.season.season_name%type
-	,p_start_date league.season.start_date%type
-	,p_end_date league.season.end_date%type
-	,p_stat_period_id league.season.stat_period_id%type
 )
 returns void
 language sql
+security definer
+set search_path = league, pg_temp
 as
 $$
 
 /*
-select league.update_season(s.season_id, s.season_name, CURRENT_DATE, null, null)
-from league.season as s
-where s.season_id = 2;
-
+Usage:
+select league.update_season(2, '2v2 Season 1')
 select * from league.season;
 */
 
 update league.season
-set  season_name = coalesce(p_season_name, season_name)
-	,start_date = p_start_date
-	,end_date = p_end_date
-	,stat_period_id = p_stat_period_id
+set  season_name = p_season_name
 where season_id = p_season_id;
 
 $$;

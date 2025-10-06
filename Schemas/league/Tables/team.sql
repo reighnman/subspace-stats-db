@@ -19,13 +19,11 @@ CREATE TABLE IF NOT EXISTS league.team
     CONSTRAINT team_franchise_id_fkey FOREIGN KEY (franchise_id)
         REFERENCES league.franchise (franchise_id) MATCH SIMPLE
         ON UPDATE NO ACTION
-        ON DELETE NO ACTION
-        NOT VALID,
+        ON DELETE NO ACTION,
     CONSTRAINT team_season_id_fkey FOREIGN KEY (season_id)
         REFERENCES league.season (season_id) MATCH SIMPLE
         ON UPDATE NO ACTION
         ON DELETE NO ACTION
-        NOT VALID
 )
 
 TABLESPACE pg_default;
@@ -40,5 +38,5 @@ CREATE INDEX IF NOT EXISTS team_season_id_team_name_team_id_idx
     ON league.team USING btree
     (season_id ASC NULLS LAST, team_name COLLATE ss.case_insensitive ASC NULLS LAST)
     INCLUDE(team_id)
-    WITH (deduplicate_items=True)
+    WITH (fillfactor=100, deduplicate_items=True)
     TABLESPACE pg_default;

@@ -20,7 +20,7 @@ from(
 		,t.team_name
 		,t.banner_small
 		,t.banner_large
-		,(select coalesce(json_agg(get_team_roster), '[]'::json)  from league.get_team_roster(t.team_id)) as roster
+		,(select coalesce(json_agg(get_team_roster), '[]'::json) from league.get_team_roster(t.team_id)) as roster
 	from league.team as t
 	where t.season_id = p_season_id
 		and t.is_enabled

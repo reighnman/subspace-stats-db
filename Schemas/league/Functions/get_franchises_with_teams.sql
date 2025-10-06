@@ -2,7 +2,7 @@ create or replace function league.get_franchises_with_teams()
 returns table(
 	 franchise_id league.franchise.franchise_id%type
 	,franchise_name league.franchise.franchise_name%type
-	,teams text
+	,teams text[]
 )
 language sql
 security definer
@@ -21,7 +21,7 @@ select * from league.get_franchises_with_teams();
 select
 	 f.franchise_id
 	,f.franchise_name
-	,(	select string_agg(dt.team_name, ', ' order by dt.last_used nulls last)
+	,(	select array_agg(dt.team_name order by dt.last_used desc nulls last)
 		from(
 			select
 				 t.team_name

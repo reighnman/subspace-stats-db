@@ -12,16 +12,15 @@ CREATE TABLE IF NOT EXISTS league.season
     end_date date,
     stat_period_id bigint,
     CONSTRAINT season_pkey PRIMARY KEY (season_id),
+    CONSTRAINT season_season_name_league_id_key UNIQUE (season_name, league_id),
     CONSTRAINT season_league_id_fkey FOREIGN KEY (league_id)
         REFERENCES league.league (league_id) MATCH SIMPLE
         ON UPDATE NO ACTION
-        ON DELETE NO ACTION
-        NOT VALID,
+        ON DELETE NO ACTION,
     CONSTRAINT season_stat_period_id_fkey FOREIGN KEY (stat_period_id)
         REFERENCES ss.stat_period (stat_period_id) MATCH SIMPLE
         ON UPDATE NO ACTION
         ON DELETE NO ACTION
-        NOT VALID
 )
 
 TABLESPACE pg_default;
@@ -36,5 +35,5 @@ CREATE INDEX IF NOT EXISTS season_league_id_created_timestamp_season_id_idx
     ON league.season USING btree
     (league_id ASC NULLS LAST, created_timestamp DESC NULLS FIRST)
     INCLUDE(season_id)
-    WITH (deduplicate_items=True)
+    WITH (fillfactor=100, deduplicate_items=True)
     TABLESPACE pg_default;
