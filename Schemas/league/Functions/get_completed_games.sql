@@ -11,6 +11,7 @@ $$
 /*
 Usage:
 select league.get_completed_games(2);
+select league.get_completed_games(4);
 */
 
 select json_agg(row_to_json(dg) order by dg.round_number desc, dg.game_timestamp desc, dg.season_game_id)
@@ -42,7 +43,8 @@ from(
 			and sg.round_number = sr.round_number
 	left outer join ss.game as g
 		on sg.game_id = g.game_id
-	where sg.game_status_id = 3 -- Complete
+	where sg.season_id = p_season_id
+		and sg.game_status_id = 3 -- Complete
 ) as dg
 
 
