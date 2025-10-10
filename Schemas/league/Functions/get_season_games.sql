@@ -28,7 +28,7 @@ from(
 		 sg.season_game_id
 		,sg.season_id
 		,sg.round_number
-		,sg.game_timestamp AT TIME ZONE 'UTC' as game_timestamp
+		,(coalesce(upper(g.time_played), sg.game_timestamp) at time zone 'UTC') as game_timestamp
 		,sg.game_id
 		,sg.game_status_id
 		,(	select json_agg(to_json(dt))
@@ -44,9 +44,11 @@ from(
 			) as dt
 		) as teams
 	from league.season_game as sg
+	left outer join ss.game as g
+		on sg.game_id = g.game_id
 	where sg.season_id = p_season_id
 	order by
-		 sg.game_timestamp desc nulls first
+		 (coalesce(upper(g.time_played), sg.game_timestamp) at time zone 'UTC') desc nulls first
 		,sg.round_number desc
 		,sg.season_game_id
 ) as dg
