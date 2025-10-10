@@ -444,8 +444,8 @@ with cte_data as(
 		,box_number int
 		,lvl_file_name character varying(16)
 		,lvl_checksum integer
-		,start_timestamp timestamp
-		,end_timestamp timestamp
+		,start_timestamp timestamptz
+		,end_timestamp timestamptz
 		,replay_path character varying
 		,players jsonb
 		,solo_stats jsonb
