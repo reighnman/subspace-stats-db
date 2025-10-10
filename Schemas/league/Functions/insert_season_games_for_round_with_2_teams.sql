@@ -6,6 +6,8 @@ returns table(
 	season_game_id league.season_game.season_game_id%type
 )
 language sql
+security definer
+set search_path = league, pg_temp
 as
 $$
 
@@ -66,31 +68,54 @@ with cte_team as(
 		,row_number() over(order by season_game_id) as game_idx
 	from cte_season_game as csg
 )
+,cte_league_setting as(
+	select
+		 l.freq_start
+		,l.freq_increment
+	from league.season as s
+	inner join league.league as l
+		on s.league_id = l.league_id
+	where s.season_id = p_season_id
+	
+)
 ,cte_season_game_team as(
 	insert into league.season_game_team(
 		 season_game_id
 		,team_id
 		,freq
+		,is_winner
+		,score
 	)
 	select
-		 dt.season_game_id
-		,dt.team_id
-		,dt.team_id * 10
+		 dt2.season_game_id
+		,dt2.team_id
+		,dt2.freq
+		,false
+		,null
 	from(
 		select
-			 csg.season_game_id
-			,cgt.team1_id as team_id
-		from cte_season_game_with_idx as csg
-		inner join cte_game_team as cgt
-			on csg.game_idx = cgt.game_idx
-		union
-		select
-			 csg.season_game_id
-			,cgt.team2_id as team_id
-		from cte_season_game_with_idx as csg
-		inner join cte_game_team as cgt
-			on csg.game_idx = cgt.game_idx
-	) as dt
+			 dt.season_game_id
+			,dt.team_id
+			,ls.freq_start + (team_idx * ls.freq_increment) as freq
+		from(
+			select
+				 csg.season_game_id
+				,cgt.team1_id as team_id
+				,0 as team_idx
+			from cte_season_game_with_idx as csg
+			inner join cte_game_team as cgt
+				on csg.game_idx = cgt.game_idx
+			union
+			select
+				 csg.season_game_id
+				,cgt.team2_id as team_id
+				,1 as team_idx
+			from cte_season_game_with_idx as csg
+			inner join cte_game_team as cgt
+				on csg.game_idx = cgt.game_idx
+		) as dt
+		cross join cte_league_setting as ls
+	) as dt2
 )
 select csg.season_game_id
 from cte_season_game as csg;

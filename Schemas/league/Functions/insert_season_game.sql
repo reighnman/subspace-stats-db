@@ -2,16 +2,49 @@ create or replace function league.insert_season_game(
 	 p_season_id league.season_game.season_id%type
 	,p_round_number league.season_game.round_number%type
 	,p_scheduled_timestamp league.season_game.scheduled_timestamp%type
-	,p_team_ids bigint[]
-	,p_freq_start smallint = 10
-	,p_freq_increment smallint = 10
+	,p_game_status_id league.season_game.game_status_id%type
+	,p_team_json jsonb
 )
 returns league.season_game.season_game_id%type
 language sql
+security definer
+set search_path = league, pg_temp
 as
 $$
 
 /*
+Inserts a season game.
+
+team_json: json describing the season_game_team data
+
+Example of inserting a new match (when p_game_status_id = 1)
+[
+	{
+		"team_id" : 123,
+		"freq" : 10,
+	},
+	{
+		"team_id" : 456,
+		"freq" : 20,
+	}
+]
+
+Example of inserting an completed match (when p_game_status_id = 3):
+[
+	{
+		"team_id" : 123,
+		"freq" : 10,
+		"is_winner" : true,
+		"score" : 6
+	},
+	{
+		"team_id" : 456,
+		"freq" : 20,
+		"is_winner" : false,
+		"score" : 2
+	}
+]
+
 Usage:
 select * from league.insert_season_game(2, 2, '2025-08-28', '{3, 1}');
 select * from league.insert_season_game(2, 2, '2025-08-28', '{2, 4}');
@@ -37,7 +70,7 @@ with cte_season_game as(
 		 p_season_id
 		,p_round_number
 		,p_scheduled_timestamp
-		,1 -- Pending
+		,p_game_status_id
 	)
 	returning season_game_id
 )
@@ -46,13 +79,23 @@ with cte_season_game as(
 		 season_game_id
 		,team_id
 		,freq
+		,is_winner
+		,score
 	)
 	select
 		 csg.season_game_id
-		,tm.team_id
-		,p_freq_start + ((tm.team_order - 1) * p_freq_increment)
+		,t.team_id
+		,t.freq
+		,t.is_winner
+		,t.score
 	from cte_season_game as csg
-	cross join unnest(p_team_ids) with ordinality as tm(team_id, team_order) 
+	cross join jsonb_array_elements(p_team_json) as a
+	cross join jsonb_to_record(a.value) as t(
+		 team_id bigint
+		,freq int
+		,is_winner boolean
+		,score int
+	)
 )
 select season_game_id 
 from cte_season_game;

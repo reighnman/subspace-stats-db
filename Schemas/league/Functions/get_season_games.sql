@@ -1,14 +1,7 @@
 create or replace function league.get_season_games(
 	p_season_id league.season.season_id%type
 )
-returns table(
-	 season_game_id league.season_game.season_game_id%type
-	,round_number league.season_game.round_number%type
-	,scheduled_timestamp league.season_game.scheduled_timestamp%type
-	,game_id league.season_game.game_id%type
-	,game_status_id league.season_game.game_status_id%type
-	,team_ids bigint[]
-)
+returns json
 language sql
 security definer
 set search_path = league, pg_temp
@@ -16,21 +9,47 @@ as
 $$
 
 /*
+Gets the games for a season.
 
+Parameters:
+p_season_id - ID of the season to get.
+
+Returns: 
+JSON representing the games in the season
+
+Usage:
+select * from league.get_season_games(2);
+select * from league.get_season_games(4);
 */
 
-select
-	 sg.season_game_id
-	,round_number
-	,scheduled_timestamp
-	,game_id
-	,game_status_id
-	,(	select array_agg(sgt.team_id)
-		from league.season_game_team as sgt
-		where sgt.season_game_id = sg.season_game_id
-	 ) as team_ids
-from league.season_game as sg
-where sg.season_id = p_season_id;
+select coalesce(json_agg(to_json(dg)))
+from(
+	select
+		 sg.season_game_id
+		,sg.season_id
+		,sg.round_number
+		,sg.scheduled_timestamp AT TIME ZONE 'UTC' as scheduled_timestamp
+		,sg.game_id
+		,sg.game_status_id
+		,(	select json_agg(to_json(dt))
+			from(
+				select
+					 sgt.team_id
+					,sgt.freq
+					,sgt.score
+					,sgt.is_winner
+				from league.season_game_team as sgt
+				where sgt.season_game_id = sg.season_game_id
+				order by sgt.freq
+			) as dt
+		) as teams
+	from league.season_game as sg
+	where sg.season_id = p_season_id
+	order by
+		 sg.scheduled_timestamp desc nulls first
+		,sg.round_number desc
+		,sg.season_game_id
+) as dg
 
 $$;
 

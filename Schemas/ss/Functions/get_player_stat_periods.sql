@@ -7,6 +7,7 @@ returns table(
 	,game_type_id game_type.game_type_id%type
 	,stat_period_type_id stat_period_type.stat_period_type_id%type
 	,period_range stat_period.period_range%type
+	,period_extra_name character varying
 )
 language plpgsql
 security definer
@@ -37,6 +38,7 @@ begin
 			,st.game_type_id
 			,st.stat_period_type_id
 			,sp.period_range
+			,ss.get_stat_period_extra_name(sp.stat_period_id) as period_extra_name
 		from player as p
 		inner join player_versus_stats as pvs -- TODO: add support for other game types (solo, pb)
 			on p.player_id = pvs.player_id

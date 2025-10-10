@@ -13,6 +13,7 @@ CREATE TABLE IF NOT EXISTS league.season
     stat_period_id bigint,
     CONSTRAINT season_pkey PRIMARY KEY (season_id),
     CONSTRAINT season_season_name_league_id_key UNIQUE (season_name, league_id),
+    CONSTRAINT season_stat_period_id_key UNIQUE (stat_period_id),
     CONSTRAINT season_league_id_fkey FOREIGN KEY (league_id)
         REFERENCES league.league (league_id) MATCH SIMPLE
         ON UPDATE NO ACTION

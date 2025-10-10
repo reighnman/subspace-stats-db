@@ -3,6 +3,8 @@ create or replace function league.get_season_game(
 )
 returns json
 language sql
+security definer
+set search_path = league, pg_temp
 as
 $$
 
@@ -50,48 +52,30 @@ Usage:
 select league.get_season_game(23);
 */
 
-select to_json(dt.*)
+select to_json(dg.*)
 from(
 	select
 		 sg.season_game_id
-		,l.game_type_id
-		,l.league_id
-		,l.league_name
-		,s.season_id
-		,s.season_name
+		,sg.season_id
 		,sg.round_number
-		,sr.round_name
-		,sg.scheduled_timestamp
-		,(	select json_object_agg(dt2.freq, json_build_object('team_id', dt2.team_id, 'team_name', dt2.team_name, 'roster', dt2.roster))
+		,sg.scheduled_timestamp AT TIME ZONE 'UTC' as scheduled_timestamp
+		,sg.game_id
+		,sg.game_status_id
+		,(	select json_agg(to_json(dt))
 			from(
 				select
-					 sgt.freq
-					,sgt.team_id
-					,t.team_name
-					,(	select json_object_agg(p.player_name, r.is_captain)
-						from league.roster as r
-						inner join ss.player as p
-							on r.player_id = p.player_id
-						where r.team_id = sgt.team_id
-							and r.is_suspended = false
-					 ) as roster
+					 sgt.team_id
+					,sgt.freq
+					,sgt.score
+					,sgt.is_winner
 				from league.season_game_team as sgt
-				inner join league.team as t
-					on sgt.team_id = t.team_id
 				where sgt.season_game_id = sg.season_game_id
 				order by sgt.freq
-			) as dt2
-		 ) as teams
+			) as dt
+		) as teams
 	from league.season_game as sg
-	inner join league.season as s
-		on sg.season_id = s.season_id
-	inner join league.league as l
-		on s.league_id = l.league_id
-	left outer join league.season_round as sr
-		on sg.season_id = sr.season_id
-			and sg.round_number = sr.round_number
 	where sg.season_game_id = p_season_game_id
-) as dt;
+) as dg;
 
 $$;
 
@@ -100,4 +84,3 @@ alter function league.get_season_game owner to ss_developer;
 revoke all on function league.get_season_game from public;
 
 grant execute on function league.get_season_game to ss_web_server;
-grant execute on function league.get_season_game to ss_zone_server;

@@ -63,7 +63,7 @@ begin
 		return query
 			select 
 				 200 as code -- success
-				,league.get_season_game(p_season_game_id) as game_json;
+				,league.get_season_game_start_info(p_season_game_id) as game_json;
 	elsif not exists(select * from league.season_game where season_game_id = p_season_game_id) then
 		return query
 			select 

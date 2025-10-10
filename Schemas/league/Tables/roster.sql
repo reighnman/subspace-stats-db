@@ -16,6 +16,10 @@ CREATE TABLE IF NOT EXISTS league.roster
         REFERENCES ss.player (player_id) MATCH SIMPLE
         ON UPDATE NO ACTION
         ON DELETE NO ACTION,
+    CONSTRAINT roster_season_id_fkey FOREIGN KEY (season_id)
+        REFERENCES league.season (season_id) MATCH SIMPLE
+        ON UPDATE NO ACTION
+        ON DELETE NO ACTION,
     CONSTRAINT roster_team_id_fkey FOREIGN KEY (team_id)
         REFERENCES league.team (team_id) MATCH SIMPLE
         ON UPDATE NO ACTION
