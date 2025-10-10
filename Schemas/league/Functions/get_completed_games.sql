@@ -19,7 +19,7 @@ from(
 		 sg.season_game_id
 		,sg.round_number
 		,sr.round_name
-		,(coalesce(upper(g.time_played), sg.scheduled_timestamp) at time zone 'UTC') as game_timestamp
+		,(coalesce(upper(g.time_played), sg.game_timestamp) at time zone 'UTC') as game_timestamp
 		,(	select json_agg(row_to_json(dt))
 			from(
 				select

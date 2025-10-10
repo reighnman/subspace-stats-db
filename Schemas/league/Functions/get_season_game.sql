@@ -25,7 +25,7 @@ Example:
   "league_name": "Test 2v2 league",
   "season_name": "2v2 - Season 1",
   "round_number": 1,
-  "scheduled_timestamp": null,
+  "game_timestamp": null,
   "teams": [
     {
       "freq": 10,
@@ -58,7 +58,7 @@ from(
 		 sg.season_game_id
 		,sg.season_id
 		,sg.round_number
-		,sg.scheduled_timestamp AT TIME ZONE 'UTC' as scheduled_timestamp
+		,sg.game_timestamp AT TIME ZONE 'UTC' as game_timestamp
 		,sg.game_id
 		,sg.game_status_id
 		,(	select json_agg(to_json(dt))

@@ -15,11 +15,11 @@ $$
 /*
 Starts a league game.
 This is intended to be called by a zone server when announcing a game.
-This could happen by an automated process based on league.season_game.scheduled_timestamp, 
+This could happen by an automated process based on league.season_game.game_timestamp, 
 or manually by an league referee (perhaps a command like: ?startleaguegame <season game id>).
 The return value tells the zone if it should continue or abort.
 
-TODO: If we want to allow captains to start a game, then we'll have to also check the scheduled_timestamp too.
+TODO: If we want to allow captains to start a game, then we'll have to also check the game_timestamp too.
 
 Normally, the game will be in the "In Progress" state when this is called.
 Alternatively, if the game already is "In Progress", it can be overriden with the p_force parameter.

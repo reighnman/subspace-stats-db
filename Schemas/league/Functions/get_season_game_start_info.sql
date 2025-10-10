@@ -23,7 +23,7 @@ Example:
   "league_name": "Test 2v2 league",
   "season_name": "2v2 - Season 1",
   "round_number": 1,
-  "scheduled_timestamp": null,
+  "game_timestamp": null,
   "teams": [
     {
       "freq": 10,
@@ -61,7 +61,7 @@ from(
 		,s.season_name
 		,sg.round_number
 		,sr.round_name
-		,sg.scheduled_timestamp
+		,sg.game_timestamp
 		,(	select json_object_agg(dt2.freq, json_build_object('team_id', dt2.team_id, 'team_name', dt2.team_name, 'roster', dt2.roster))
 			from(
 				select

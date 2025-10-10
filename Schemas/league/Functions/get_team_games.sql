@@ -33,7 +33,7 @@ select
 	 sg.season_game_id
 	,sg.round_number
 	,sr.round_name
-	,coalesce(upper(g.time_played), sg.scheduled_timestamp) as game_timestamp
+	,coalesce(upper(g.time_played), sg.game_timestamp) as game_timestamp
 	,sg.game_id
 	,(	select string_agg(t.team_name, ' vs ' order by freq)
 		from league.season_game_team as sgt2
@@ -84,7 +84,7 @@ left outer join league.season_round as sr
 left outer join ss.game as g
 	on sg.game_id = g.game_id
 where sgt.team_id = p_team_id
-order by sg.scheduled_timestamp desc nulls first;
+order by sg.game_timestamp desc nulls first;
 
 $$;
 

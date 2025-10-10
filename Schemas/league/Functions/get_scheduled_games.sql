@@ -9,7 +9,7 @@ returns table(
 	,season_game_id league.season_game.season_game_id%type
 	,round_number league.season_round.round_number%type
 	,round_name league.season_round.round_name%type
-	,scheduled_timestamp league.season_game.scheduled_timestamp%type
+	,game_timestamp league.season_game.game_timestamp%type
 	,teams text
 	,game_status_id league.season_game.game_status_id%type
 )
@@ -34,7 +34,7 @@ select
 	,sg.season_game_id
 	,sg.round_number
 	,sr.round_name
-	,sg.scheduled_timestamp
+	,sg.game_timestamp
 	,(	select string_agg(t.team_name, ' vs ' order by freq)
 		from league.season_game_team as sgt
 		inner join league.team as t
@@ -58,7 +58,7 @@ where s.season_id = coalesce(p_season_id, s.season_id)
 order by
 	 l.league_id
 	,s.season_id
-	,sg.scheduled_timestamp
+	,sg.game_timestamp
 	,sg.game_status_id
 	,sg.season_game_id;
 

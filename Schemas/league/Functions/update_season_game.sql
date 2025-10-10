@@ -19,13 +19,13 @@ with cte_game as(
 	select
 		 season_game_id
 		,round_number
-		,scheduled_timestamp
+		,game_timestamp
 		,game_status_id
 		,teams
 	from jsonb_to_record(p_game_json) as(
 		 season_game_id bigint
 		,round_number int
-		,scheduled_timestamp timestamptz
+		,game_timestamp timestamptz
 		,game_status_id bigint
 		,teams jsonb
 	)
@@ -47,7 +47,7 @@ with cte_game as(
 ,cte_update_season_game as(
 	update league.season_game as sg
 	set  round_number = cg.round_number
-		,scheduled_timestamp = cg.scheduled_timestamp
+		,game_timestamp = cg.game_timestamp
 		,game_status_id = cg.game_status_id
 	from cte_game as cg
 	where sg.season_game_id = cg.season_game_id

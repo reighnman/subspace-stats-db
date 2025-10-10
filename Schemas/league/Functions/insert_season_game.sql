@@ -1,7 +1,7 @@
 create or replace function league.insert_season_game(
 	 p_season_id league.season_game.season_id%type
 	,p_round_number league.season_game.round_number%type
-	,p_scheduled_timestamp league.season_game.scheduled_timestamp%type
+	,p_game_timestamp league.season_game.game_timestamp%type
 	,p_game_status_id league.season_game.game_status_id%type
 	,p_team_json jsonb
 )
@@ -63,13 +63,13 @@ with cte_season_game as(
 	insert into league.season_game(
 		 season_id
 		,round_number
-		,scheduled_timestamp
+		,game_timestamp
 		,game_status_id
 	)
 	values(
 		 p_season_id
 		,p_round_number
-		,p_scheduled_timestamp
+		,p_game_timestamp
 		,p_game_status_id
 	)
 	returning season_game_id
