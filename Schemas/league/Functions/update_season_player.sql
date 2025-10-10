@@ -19,7 +19,12 @@ select * from league.update_season_player(2, 78, null, true, false);
 */
 
 update league.roster as r
-set team_id = p_team_id
+set  team_id = p_team_id
+	,enroll_timestamp = 
+		case when p_team_id is null then null
+			when p_team_id = r.team_id then r.enroll_timestamp
+			else current_timestamp
+		end
 	,is_captain = p_is_captain
 	,is_suspended = p_is_suspended
 where r.season_id = p_season_id
