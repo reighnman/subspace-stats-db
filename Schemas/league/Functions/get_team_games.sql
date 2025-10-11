@@ -84,7 +84,10 @@ left outer join league.season_round as sr
 left outer join ss.game as g
 	on sg.game_id = g.game_id
 where sgt.team_id = p_team_id
-order by sg.game_timestamp desc nulls first;
+order by
+	 sg.round_number desc
+	,coalesce(upper(g.time_played), sg.game_timestamp)desc nulls first
+	,sg.season_game_id
 
 $$;
 
