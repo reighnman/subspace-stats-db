@@ -50,11 +50,18 @@ select * from league.start_game(999999999, false); -- test 404
 */
 
 begin
-	update league.season_game
+	update league.season_game as sg
 	set game_status_id = 2 -- in progress
-	where season_game_id = p_season_game_id
-		and(game_status_id = 1 -- pending
-			or (game_status_id = 2 -- in progress
+	where sg.season_game_id = p_season_game_id
+		and exists(
+			select *
+			from league.season as s
+			where s.season_id = sg.season_id
+				and s.start_date is not null -- season is started
+				and s.end_date is null -- season has not ended
+		)
+		and(sg.game_status_id = 1 -- pending
+			or (sg.game_status_id = 2 -- in progress
 				and p_force = true
 			)
 		);

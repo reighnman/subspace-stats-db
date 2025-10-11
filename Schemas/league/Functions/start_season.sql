@@ -1,6 +1,6 @@
 create or replace function league.start_season(
 	 p_season_id league.season.season_id%type
-	,p_start_date date
+	,p_start_date league.season.start_date%type
 )
 returns void
 language plpgsql
