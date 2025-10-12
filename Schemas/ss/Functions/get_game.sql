@@ -27,8 +27,8 @@ from(
 		,zs.zone_server_name
 		,a.arena_name
 		,g.box_number
-		,lower(g.time_played) as start_time
-		,upper(g.time_played) as end_time
+		,(lower(g.time_played) at time zone 'UTC') as start_time
+		,(upper(g.time_played) at time zone 'UTC') as end_time
 		,g.replay_path
 		,l.lvl_file_name
 		,l.lvl_checksum
@@ -41,7 +41,7 @@ from(
 							from(
 								select 
 									 ge.game_event_type_id as event_type_id
-									,ge.event_timestamp as timestamp
+									,(ge.event_timestamp at time zone 'UTC') as timestamp
 									,ase.freq
 									,ase.slot_idx
 									,p.player_name as player
@@ -56,7 +56,7 @@ from(
 							from(
 								select
 									 ge.game_event_type_id as event_type_id
-									,ge.event_timestamp as timestamp
+									,(ge.event_timestamp at time zone 'UTC') as timestamp
 									,p1.player_name as killed_player
 									,p2.player_name as killer_player
 									,ke.is_knockout
@@ -92,7 +92,7 @@ from(
 							from(
 								select
 									 ge.game_event_type_id as event_type_id
-									,ge.event_timestamp as timestamp
+									,(ge.event_timestamp at time zone 'UTC') as timestamp
 									,p.player_name as player
 									,sce.ship
 								from game_ship_change_event as sce
@@ -106,7 +106,7 @@ from(
 							from(
 								select
 									 ge.game_event_type_id as event_type_id
-									,ge.event_timestamp as timestamp
+									,(ge.event_timestamp at time zone 'UTC') as timestamp
 									,p.player_name as player
 									,uie.ship_item_id
 									,(	select json_object_agg(p3.player_name, ged.damage)
