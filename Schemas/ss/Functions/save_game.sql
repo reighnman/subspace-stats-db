@@ -1,5 +1,6 @@
 create or replace function ss.save_game(
-	game_json jsonb
+	 p_game_json jsonb
+	,p_stat_period_id ss.stat_period.stat_period_id%type = null
 )
 returns game.game_id%type
 language sql
@@ -12,7 +13,12 @@ $$
 Saves data for a completed game into the database.
 
 Parameters:
-game_json - JSON that represents the game data to save.
+p_stat_period_id - An optional, stat period that limits which stat periods the game should be saved for.
+	For regular games, no period is passed. The game's stats will be applied to all of the stat periods that match the game's game type and game time.
+	For league matches, the season's stat period is passed. This is so that if there are multiple active seasons with the same game type, the game's stats
+	can be applied to only the season's stat period and lifetime/forever period.
+
+p_game_json - JSON that represents the game data to save.
 
 	The JSON differs based on game_type:
 	- "solo_stats" for solo game modes (e.g. 1v1, 1v1v1, FFA 1 player/team, ...)
@@ -437,7 +443,7 @@ with cte_data as(
 		,gr.team_stats
 		,gr.pb_stats
 		,gr.events
-	from jsonb_to_record(game_json) as gr(
+	from jsonb_to_record(p_game_json) as gr(
 		 game_type_id bigint
 		,zone_server_name character varying
 		,arena character varying
@@ -475,6 +481,7 @@ with cte_data as(
 		,time_played
 		,replay_path
 		,lvl_id
+		,stat_period_id
 	)
 	select
 		 game_type_id
@@ -484,6 +491,7 @@ with cte_data as(
 		,time_played
 		,replay_path
 		,lvl_id
+		,p_stat_period_id
 	from cte_data
 	returning game.game_id
 )
@@ -1204,15 +1212,33 @@ with cte_data as(
 		on r.key = cp.player_name
 )
 ,cte_stat_periods as(
+	-- regular games (p_stat_period_id is null) - apply to all stat periods that match by game_type_id and time_played
 	select
 		 sp.stat_period_id
+		,st.is_rating_enabled
 		,st.initial_rating
 		,st.minimum_rating
-		,st.is_rating_enabled
 	from cte_data as cd
 	cross join get_or_insert_stat_periods(cd.game_type_id, lower(cd.time_played)) as sp
 	inner join stat_tracking as st
 		on sp.stat_tracking_id = st.stat_tracking_id
+	where p_stat_period_id is null
+	union
+	-- league matches (p_stat_period_id is not null) - apply to only the specified stat period and the lifetime/forever stat period
+	select
+		 sp.stat_period_id
+		,st.is_rating_enabled
+		,st.initial_rating
+		,st.minimum_rating
+	from cte_data as cd
+	inner join ss.stat_tracking as st
+		on cd.game_type_id = st.game_type_id
+	inner join ss.stat_period as sp
+		on st.stat_tracking_id = sp.stat_tracking_id
+	where p_stat_period_id is not null
+		and (sp.stat_period_id = p_stat_period_id
+			or st.stat_period_type_id = 0 -- lifetime/forever
+		)
 )
 ,cte_player_solo_stats as(
 	select
@@ -1750,10 +1776,17 @@ from cte_game as cm;
 
 $$;
 
+alter function ss.save_game(
+	 p_game_json jsonb
+	,p_stat_period_id ss.stat_period.stat_period_id%type
+) owner to ss_developer;
+
 revoke all on function ss.save_game(
-	game_json jsonb
+	 p_game_json jsonb
+	,p_stat_period_id ss.stat_period.stat_period_id%type
 ) from public;
 
 grant execute on function ss.save_game(
-	game_json jsonb
+	 p_game_json jsonb
+	,p_stat_period_id ss.stat_period.stat_period_id%type
 ) to ss_zone_server;

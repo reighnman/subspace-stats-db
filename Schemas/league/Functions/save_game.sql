@@ -18,9 +18,11 @@ declare
 begin
 	-- Save the game data and store resulting game_id in the season_game record.
 	update league.season_game as sg
-	set game_id = ss.save_game(p_game_json)
+	set  game_id = ss.save_game(p_game_json, s.stat_period_id)
 		,game_status_id = 3 -- Complete
+	from league.season as s
 	where sg.season_game_id = p_season_game_id
+		and sg.season_id = s.season_id
 	returning game_id
 	into l_game_id;
 

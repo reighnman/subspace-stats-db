@@ -12,6 +12,7 @@ CREATE TABLE IF NOT EXISTS ss.game
     time_played tstzrange NOT NULL,
     replay_path character varying COLLATE pg_catalog."default",
     lvl_id bigint NOT NULL,
+    stat_period_id bigint,
     CONSTRAINT game_pkey PRIMARY KEY (game_id),
     CONSTRAINT game_arena_id_fkey FOREIGN KEY (arena_id)
         REFERENCES ss.arena (arena_id) MATCH SIMPLE
@@ -25,6 +26,10 @@ CREATE TABLE IF NOT EXISTS ss.game
         REFERENCES ss.lvl (lvl_id) MATCH SIMPLE
         ON UPDATE NO ACTION
         ON DELETE NO ACTION,
+    CONSTRAINT game_stat_period_id_fkey FOREIGN KEY (stat_period_id)
+        REFERENCES ss.stat_period (stat_period_id) MATCH SIMPLE
+        ON UPDATE NO ACTION
+        ON DELETE NO ACTION,
     CONSTRAINT game_zone_server_id_fkey FOREIGN KEY (zone_server_id)
         REFERENCES ss.zone_server (zone_server_id) MATCH SIMPLE
         ON UPDATE NO ACTION
@@ -35,6 +40,17 @@ TABLESPACE pg_default;
 
 ALTER TABLE IF EXISTS ss.game
     OWNER to ss_developer;
+-- Index: game_stat_period_id_game_type_id_game_id_idx
+
+-- DROP INDEX IF EXISTS ss.game_stat_period_id_game_type_id_game_id_idx;
+
+CREATE INDEX IF NOT EXISTS game_stat_period_id_game_type_id_game_id_idx
+    ON ss.game USING btree
+    (stat_period_id ASC NULLS LAST)
+    INCLUDE(game_id)
+    WITH (fillfactor=100, deduplicate_items=True)
+    TABLESPACE pg_default
+    WHERE stat_period_id IS NOT NULL;
 -- Index: game_time_played_game_type_id_game_id_idx
 
 -- DROP INDEX IF EXISTS ss.game_time_played_game_type_id_game_id_idx;
@@ -43,5 +59,5 @@ CREATE INDEX IF NOT EXISTS game_time_played_game_type_id_game_id_idx
     ON ss.game USING gist
     (time_played)
     INCLUDE(game_type_id, game_id)
-    WITH (buffering=auto)
+    WITH (fillfactor=90, buffering=auto)
     TABLESPACE pg_default;

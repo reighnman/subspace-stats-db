@@ -3,6 +3,8 @@ create or replace function ss.refresh_player_versus_stats(
 )
 returns void
 language plpgsql
+security definer
+set search_path = ss, pg_temp
 as
 $$
 
@@ -23,13 +25,16 @@ p_stat_period_id - Id of the stat period to refresh player stat data for.
 Usage:
 select ss.refresh_player_versus_stats(18);
 
-select * from stat_period;
-select * from stat_tracking;
-select * from player_rating;
+select * from ss.game_mode;
+select * from ss.stat_period;
+select * from ss.stat_period_type;
+select * from ss.stat_tracking;
+select * from ss.player_rating;
 */
 
 declare
 	l_game_type_id game_type.game_type_id%type;
+	l_stat_period_type_id ss.stat_period_type.stat_period_type_id%type;
 	l_period_range stat_period.period_range%type;
 	l_is_rating_enabled stat_tracking.is_rating_enabled%type;
 	l_initial_rating stat_tracking.initial_rating%type;
@@ -37,28 +42,68 @@ declare
 begin
 	select
 		 st.game_type_id
+		,st.stat_period_type_id
 		,sp.period_range
 		,st.is_rating_enabled
 		,st.initial_rating
 		,st.minimum_rating
 	into
 		 l_game_type_id
+		,l_stat_period_type_id
 		,l_period_range
 		,l_is_rating_enabled
 		,l_initial_rating
 		,l_minimum_rating
-	from stat_period as sp
-	inner join stat_tracking as st
+	from ss.stat_period as sp
+	inner join ss.stat_tracking as st
 		on sp.stat_tracking_id = st.stat_tracking_id
-	where sp.stat_period_id = p_stat_period_id;
+	inner join ss.game_type as gt
+		on st.game_type_id = gt.game_type_id
+	where sp.stat_period_id = p_stat_period_id
+		and gt.game_mode_id = 2; -- Team Versus
 	
 	if l_game_type_id is null or l_period_range is null then
 		raise exception 'Invalid stat period specified. (%)', p_stat_period_id;
 	end if;
 	
-	delete from player_versus_stats
+	delete from ss.player_versus_stats
 	where stat_period_id = p_stat_period_id;
-	
+
+	if l_is_rating_enabled = true then
+		delete from ss.player_rating
+		where stat_period_id = p_stat_period_id;
+	end if;
+
+	with cte_games as( -- NOTE: This purposely targets specific covering indexes on the ss.game table.
+		-- non-league games
+		select g.game_id
+		from ss.game as g
+		where l_stat_period_type_id <> 2 -- not a League Season stat period
+			and l_period_range @> g.time_played -- match by time_played
+			and g.game_type_id = l_game_type_id -- and game type
+		union
+		-- league games
+		select g.game_id
+		from ss.game as g
+		where l_stat_period_type_id = 2 -- is a League Season stat period
+			and g.stat_period_id = p_stat_period_id -- match on the specific stat period for the season
+	)
+	,cte_insert_player_rating as(
+		insert into player_rating(
+			 player_id
+			,stat_period_id
+			,rating
+		)
+		select
+			 vgtm.player_id
+			,p_stat_period_id
+			,greatest(l_initial_rating + sum(vgtm.rating_change), l_minimum_rating) as rating
+		from cte_games as c
+		inner join ss.versus_game_team_member as vgtm
+			on c.game_id = vgtm.game_id
+		where l_is_rating_enabled = true
+		group by vgtm.player_id
+	)
 	insert into player_versus_stats(
 		 player_id
 		,stat_period_id
@@ -204,36 +249,21 @@ begin
 			,enemy_distance_samples
 			,team_distance_sum
 			,team_distance_samples
-		from game as g
+		from cte_games as c
+		inner join game as g
+			on c.game_id = g.game_id
 		inner join versus_game_team_member as vgtm
 			on g.game_id = vgtm.game_id
 		inner join versus_game_team as vgt
 			on vgtm.game_id = vgt.game_id
 				and vgtm.freq = vgt.freq
-		where g.game_type_id = l_game_type_id
-			and l_period_range @> g.time_played
 	) as dt
 	group by dt.player_id;
-
-	if l_is_rating_enabled = true then
-		delete from player_rating
-		where stat_period_id = p_stat_period_id;
-
-		insert into player_rating(
-			 player_id
-			,stat_period_id
-			,rating
-		)
-		select
-			 vgtm.player_id
-			,p_stat_period_id
-			,greatest(l_initial_rating + sum(vgtm.rating_change), l_minimum_rating) as rating
-		from game as g
-		inner join versus_game_team_member as vgtm
-			on g.game_id = vgtm.game_id
-		where g.game_type_id = l_game_type_id
-			and l_period_range @> g.time_played
-		group by vgtm.player_id;
-	end if;
 end;
 $$;
+
+alter function ss.refresh_player_versus_stats owner to ss_developer;
+
+revoke all on function ss.refresh_player_versus_stats from public;
+
+grant execute on function ss.refresh_player_versus_stats to ss_web_server;
