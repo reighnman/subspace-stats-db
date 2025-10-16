@@ -11,8 +11,10 @@ $$
 
 /*
 Starts a season.
-This creates a new ss.stat_period, saving the resulting stat_period_id in the league.season table.
-Also, the league.season.start_date is set.
+This creates:
+- the lifetime/forever stat tracking records for the league's game type
+- the stat tracking records for the season
+The season is updated with a start date and the stat period.
 
 Parameters:
 p_season_id - The season to start.
@@ -29,6 +31,7 @@ select * from ss.stat_period;
 */
 
 declare
+	l_game_type_id ss.game_type.game_type_id%type;
 	l_stat_tracking_id ss.stat_tracking.stat_tracking_id%type;
 	l_stat_period_id ss.stat_period.stat_period_id%type;
 begin
@@ -48,6 +51,20 @@ begin
 		raise exception 'The season was already started previously. (%)', p_season_id;
 	end if;
 
+	--
+	-- Create the lifetime/forever stat tracking records for the game type if they doesn't already exist.
+	--
+	
+	perform ss.get_or_insert_lifetime_stat_tracking(l.game_type_id)
+	from league.season as s
+	inner join league.league as l
+		 on s.league_id = l.league_id
+	where s.season_id = p_season_id;
+
+	--
+	-- Create the stat tracking records for the season.
+	--
+	
 	select st.stat_tracking_id
 	into l_stat_tracking_id
 	from league.season as s
@@ -95,6 +112,10 @@ begin
 	)
 	returning stat_period_id
 	into strict l_stat_period_id;
+
+	--
+	-- Update the season as being started
+	--
 	
 	update league.season as s
 	set start_date = p_start_date
