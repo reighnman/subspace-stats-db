@@ -110,4 +110,4 @@ alter function league.start_season owner to ss_developer;
 
 revoke all on function league.start_season from public;
 
-grant execute on function league.start_season to ss_zone_server;
+grant execute on function league.start_season to ss_web_server;
