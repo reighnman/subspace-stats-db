@@ -9,7 +9,6 @@ CREATE TABLE IF NOT EXISTS ss.versus_game_team_member
     slot_idx smallint NOT NULL,
     member_idx smallint NOT NULL,
     player_id bigint NOT NULL,
-	premade_group smallint,
     play_duration interval NOT NULL,
     ship_mask smallint NOT NULL,
     lag_outs smallint NOT NULL,
@@ -50,6 +49,7 @@ CREATE TABLE IF NOT EXISTS ss.versus_game_team_member
     enemy_distance_samples integer,
     team_distance_sum bigint,
     team_distance_samples integer,
+    premade_group smallint,
     CONSTRAINT versus_game_team_member_pkey PRIMARY KEY (game_id, freq, slot_idx, member_idx),
     CONSTRAINT versus_game_team_member_game_id_freq_fkey FOREIGN KEY (game_id, freq)
         REFERENCES ss.versus_game_team (game_id, freq) MATCH SIMPLE
@@ -74,5 +74,5 @@ CREATE INDEX IF NOT EXISTS versus_game_team_member_player_id_game_id_freq_idx
     ON ss.versus_game_team_member USING btree
     (player_id ASC NULLS LAST)
     INCLUDE(game_id, freq)
-    WITH (deduplicate_items=True)
+    WITH (fillfactor=100, deduplicate_items=True)
     TABLESPACE pg_default;
