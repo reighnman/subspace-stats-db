@@ -7,7 +7,7 @@ CREATE TABLE IF NOT EXISTS league.season_game
     season_game_id bigint NOT NULL GENERATED ALWAYS AS IDENTITY ( INCREMENT 1 START 1 MINVALUE 1 MAXVALUE 9223372036854775807 CACHE 1 ),
     season_id bigint NOT NULL,
     round_number integer,
-    scheduled_timestamp timestamp with time zone,
+    game_timestamp timestamp with time zone,
     game_id bigint,
     game_status_id bigint NOT NULL,
     CONSTRAINT season_game_pkey PRIMARY KEY (season_game_id),
