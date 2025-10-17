@@ -30,13 +30,21 @@ TABLESPACE pg_default;
 
 ALTER TABLE IF EXISTS league.roster
     OWNER to ss_developer;
--- Index: roster_player_id_season_id_idx
+-- Index: roster_player_id_idx
 
--- DROP INDEX IF EXISTS league.roster_player_id_season_id_idx;
+-- DROP INDEX IF EXISTS league.roster_player_id_idx;
 
-CREATE INDEX IF NOT EXISTS roster_player_id_season_id_idx
+CREATE INDEX IF NOT EXISTS roster_player_id_idx
     ON league.roster USING btree
     (player_id ASC NULLS LAST)
-    INCLUDE(season_id)
+    WITH (fillfactor=100, deduplicate_items=True)
+    TABLESPACE pg_default;
+-- Index: roster_team_id_idx
+
+-- DROP INDEX IF EXISTS league.roster_team_id_idx;
+
+CREATE INDEX IF NOT EXISTS roster_team_id_idx
+    ON league.roster USING btree
+    (team_id ASC NULLS LAST)
     WITH (fillfactor=100, deduplicate_items=True)
     TABLESPACE pg_default;

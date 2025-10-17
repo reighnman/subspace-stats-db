@@ -26,3 +26,12 @@ TABLESPACE pg_default;
 
 ALTER TABLE IF EXISTS league.season_game_team
     OWNER to ss_developer;
+-- Index: season_game_team_team_id_idx
+
+-- DROP INDEX IF EXISTS league.season_game_team_team_id_idx;
+
+CREATE INDEX IF NOT EXISTS season_game_team_team_id_idx
+    ON league.season_game_team USING btree
+    (team_id ASC NULLS LAST)
+    WITH (fillfactor=100, deduplicate_items=True)
+    TABLESPACE pg_default;
