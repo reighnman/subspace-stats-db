@@ -3,6 +3,8 @@ create or replace function league.refresh_team_stats(
 )
 returns void
 language sql
+security definer
+set search_path = league, pg_temp
 as
 $$
 
@@ -34,7 +36,10 @@ from(
 				else 'D'
 			 end win_lose_draw
 		from league.season_game_team as sgt
-		where team_id = p_team_id
+		inner join league.season_game as sg
+			on sgt.season_game_id = sg.season_game_id
+		where sgt.team_id = p_team_id
+			and sg.game_status_id = 3 -- Complete
 	) as dt
 ) as dt2
 where t.team_id = p_team_id;
