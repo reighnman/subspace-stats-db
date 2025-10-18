@@ -18,7 +18,7 @@ select * from league.get_season(2);
 
 select
 	 s.season_name
-	,l.league_id
+	,s.league_id
 from league.season as s
 where s.season_id = p_season_id;
 
