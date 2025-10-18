@@ -17,4 +17,4 @@ when not matched then
 	values(
 		 v.season_role_id
 		,v.season_role_name
-	)
+	);

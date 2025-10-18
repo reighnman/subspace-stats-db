@@ -17,4 +17,4 @@ when not matched then
 	values(
 		 v.league_role_id
 		,v.league_role_name
-	)
+	);
