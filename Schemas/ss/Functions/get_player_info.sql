@@ -1,10 +1,10 @@
 create or replace function ss.get_player_info(
-	p_player_name character varying(20)
+	p_player_name ss.player.player_name%type
 )
 returns table(
-	 squad_name squad.squad_name%type
-	,x_res player.x_res%type
-	,y_res player.y_res%type
+	 squad_name ss.squad.squad_name%type
+	,x_res ss.player.x_res%type
+	,y_res ss.player.y_res%type
 )
 language sql
 security definer
@@ -26,17 +26,15 @@ select
 	 s.squad_name
 	,p.x_res
 	,p.y_res
-from player as p
-left outer join squad as s
+from ss.player as p
+left outer join ss.squad as s
 	on p.squad_id = s.squad_id
 where p.player_name = p_player_name;
 
 $$;
 
-revoke all on function ss.get_player_info(
-	p_player_name character varying(20)
-) from public;
+alter function ss.get_player_info owner to ss_developer;
 
-grant execute on function ss.get_player_info(
-	p_player_name character varying(20)
-) to ss_web_server;
+revoke all on function ss.get_player_info from public;
+
+grant execute on function ss.get_player_info to ss_web_server;

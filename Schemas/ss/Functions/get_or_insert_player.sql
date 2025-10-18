@@ -1,5 +1,5 @@
 create or replace function ss.get_or_insert_player(
-	 p_player_name player.player_name%type
+	 p_player_name ss.player.player_name%type
 )
 returns ss.player.player_id%type
 language plpgsql
@@ -43,3 +43,7 @@ begin
 	return l_player_id;
 end;
 $$;
+
+alter function ss.get_or_insert_player owner to ss_developer;
+
+revoke all on function ss.get_or_insert_player from public;

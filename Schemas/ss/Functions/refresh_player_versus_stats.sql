@@ -1,5 +1,5 @@
 create or replace function ss.refresh_player_versus_stats(
-	p_stat_period_id stat_period.stat_period_id%type
+	p_stat_period_id ss.stat_period.stat_period_id%type
 )
 returns void
 language plpgsql
@@ -33,12 +33,12 @@ select * from ss.player_rating;
 */
 
 declare
-	l_game_type_id game_type.game_type_id%type;
+	l_game_type_id ss.game_type.game_type_id%type;
 	l_stat_period_type_id ss.stat_period_type.stat_period_type_id%type;
-	l_period_range stat_period.period_range%type;
-	l_is_rating_enabled stat_tracking.is_rating_enabled%type;
-	l_initial_rating stat_tracking.initial_rating%type;
-	l_minimum_rating stat_tracking.minimum_rating%type;
+	l_period_range ss.stat_period.period_range%type;
+	l_is_rating_enabled ss.stat_tracking.is_rating_enabled%type;
+	l_initial_rating ss.stat_tracking.initial_rating%type;
+	l_minimum_rating ss.stat_tracking.minimum_rating%type;
 begin
 	select
 		 st.game_type_id
@@ -89,7 +89,7 @@ begin
 			and g.stat_period_id = p_stat_period_id -- match on the specific stat period for the season
 	)
 	,cte_insert_player_rating as(
-		insert into player_rating(
+		insert into ss.player_rating(
 			 player_id
 			,stat_period_id
 			,rating
@@ -104,7 +104,7 @@ begin
 		where l_is_rating_enabled = true
 		group by vgtm.player_id
 	)
-	insert into player_versus_stats(
+	insert into ss.player_versus_stats(
 		 player_id
 		,stat_period_id
 		,games_played
@@ -202,7 +202,7 @@ begin
 			,vgt.is_winner
 			,case when exists(
 					select *
-					from versus_game_team as vgt2
+					from ss.versus_game_team as vgt2
 					where vgt2.game_id = vgtm.game_id
 						and vgt2.freq <> vgt.freq
 						and vgt2.is_winner = true
@@ -250,11 +250,11 @@ begin
 			,team_distance_sum
 			,team_distance_samples
 		from cte_games as c
-		inner join game as g
+		inner join ss.game as g
 			on c.game_id = g.game_id
-		inner join versus_game_team_member as vgtm
+		inner join ss.versus_game_team_member as vgtm
 			on g.game_id = vgtm.game_id
-		inner join versus_game_team as vgt
+		inner join ss.versus_game_team as vgt
 			on vgtm.game_id = vgt.game_id
 				and vgtm.freq = vgt.freq
 	) as dt

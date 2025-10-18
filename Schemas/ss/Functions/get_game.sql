@@ -1,5 +1,5 @@
 create or replace function ss.get_game(
-	p_game_id game.game_id%type
+	p_game_id ss.game.game_id%type
 )
 returns json
 language sql
@@ -45,8 +45,8 @@ from(
 									,ase.freq
 									,ase.slot_idx
 									,p.player_name as player
-								from versus_game_assign_slot_event as ase
-								inner join player as p
+								from ss.versus_game_assign_slot_event as ase
+								inner join ss.player as p
 									on ase.player_id = p.player_id
 								where ase.game_event_id = ge.game_event_id
 							) as dt
@@ -68,21 +68,21 @@ from(
 									,ke.score
 									,ke.remaining_slots
 									,(	select json_object_agg(p3.player_name, ged.damage)
-										from game_event_damage as ged
-										inner join player as p3
+										from ss.game_event_damage as ged
+										inner join ss.player as p3
 											on ged.player_id = p3.player_id
 										where ged.game_event_id = ge.game_event_id
 									 ) as damage_stats
 									,(	select json_object_agg(p4.player_name, ger.rating)
-										from game_event_rating as ger
-										inner join player as p4
+										from ss.game_event_rating as ger
+										inner join ss.player as p4
 											on ger.player_id = p4.player_id
 										where ger.game_event_id = ge.game_event_id
 									) as rating_changes
-								from versus_game_kill_event as ke
-								inner join player as p1
+								from ss.versus_game_kill_event as ke
+								inner join ss.player as p1
 									on ke.killed_player_id = p1.player_id
-								inner join player as p2
+								inner join ss.player as p2
 									on ke.killer_player_id = p2.player_id
 								where ke.game_event_id = ge.game_event_id
 							) as dt
@@ -95,8 +95,8 @@ from(
 									,(ge.event_timestamp at time zone 'UTC') as timestamp
 									,p.player_name as player
 									,sce.ship
-								from game_ship_change_event as sce
-								inner join player as p
+								from ss.game_ship_change_event as sce
+								inner join ss.player as p
 									on sce.player_id = p.player_id
 								where sce.game_event_id = ge.game_event_id
 							) as dt
@@ -110,20 +110,20 @@ from(
 									,p.player_name as player
 									,uie.ship_item_id
 									,(	select json_object_agg(p3.player_name, ged.damage)
-										from game_event_damage as ged
-										inner join player as p3
+										from ss.game_event_damage as ged
+										inner join ss.player as p3
 											on ged.player_id = p3.player_id
 										where ged.game_event_id = ge.game_event_id
 									 ) as damage_stats
-								from game_use_item_event as uie
-								inner join player as p
+								from ss.game_use_item_event as uie
+								inner join ss.player as p
 									on uie.player_id = p.player_id
 								where uie.game_event_id = ge.game_event_id
 							) as dt
 						)
 						else null
 					end as event_json
-				from game_event as ge
+				from ss.game_event as ge
 				where ge.game_id = g.game_id
 				order by ge.event_idx
 			) as edt
@@ -182,10 +182,10 @@ from(
 								,vgtm.enemy_distance_samples
 								,vgtm.team_distance_sum
 								,vgtm.team_distance_samples
-							from versus_game_team_member as vgtm
-							inner join player as p
+							from ss.versus_game_team_member as vgtm
+							inner join ss.player as p
 								on vgtm.player_id = p.player_id
-							left outer join squad as s
+							left outer join ss.squad as s
 								on p.squad_id = s.squad_id
 							where vgtm.game_id = vgt.game_id
 								and vgtm.freq = vgt.freq
@@ -194,30 +194,28 @@ from(
 								,vgtm.member_idx
 						) as mdt
 					 ) as members
-				from versus_game_team as vgt
+				from ss.versus_game_team as vgt
 				where gt.game_mode_id = 2 -- Team Versus
 					and vgt.game_id = g.game_id
 				order by vgt.freq
 			) as tdt
 		 ) as team_stats
-	from game as g
-	inner join game_type as gt
+	from ss.game as g
+	inner join ss.game_type as gt
 		on g.game_type_id = gt.game_type_id
-	inner join zone_server as zs
+	inner join ss.zone_server as zs
 		on g.zone_server_id = zs.zone_server_id
-	inner join arena as a
+	inner join ss.arena as a
 		on g.arena_id = a.arena_id
-	inner join lvl as l
+	inner join ss.lvl as l
 		on g.lvl_id = l.lvl_id
 	where g.game_id = p_game_id
 ) as dt;
 
 $$;
 
-revoke all on function ss.get_game(
-	p_game_id game.game_id%type
-) from public;
+alter function ss.get_game owner to ss_developer;
 
-grant execute on function ss.get_game(
-	p_game_id game.game_id%type
-) to ss_web_server;
+revoke all on function ss.get_game from public;
+
+grant execute on function ss.get_game to ss_web_server;
