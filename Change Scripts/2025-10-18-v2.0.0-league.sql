@@ -983,9 +983,9 @@ begin
 end;
 $$;
 
-alter function ss.get_game owner to ss_developer;
+alter function ss.get_or_insert_arena owner to ss_developer;
 
-revoke all on function ss.get_game from public;
+revoke all on function ss.get_or_insert_arena from public;
 
 create or replace function ss.get_or_insert_lifetime_stat_tracking(
 	p_game_type_id ss.game_type.game_type_id%type
