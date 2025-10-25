@@ -118,6 +118,15 @@ ALTER TABLE IF EXISTS ss.game_type
     ADD UNIQUE (game_type_name)
     INCLUDE (game_type_id, game_mode_id);
 
+ALTER TABLE IF EXISTS ss.game_type
+    ALTER COLUMN game_type_id ADD GENERATED ALWAYS AS IDENTITY;
+
+-- Update the next identity column sequence #
+select setval(pg_get_serial_sequence('ss.game_type', 'game_type_id'), dt.next_game_type_id)
+from(
+	select max(game_type_id)+1 as next_game_type_id from ss.game_type
+) as dt;
+
 --
 -- ss.game
 --
