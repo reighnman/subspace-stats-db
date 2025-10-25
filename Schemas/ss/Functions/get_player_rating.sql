@@ -1,10 +1,10 @@
 create or replace function ss.get_player_rating(
-	 p_game_type_id game_type.game_type_id%type
+	 p_game_type_id ss.game_type.game_type_id%type
 	,p_player_names character varying(20)[]
 )
 returns table(
-	 player_name player.player_name%type
-	,rating player_rating.rating%type
+	 player_name ss.player.player_name%type
+	,rating ss.player_rating.rating%type
 )
 language sql
 security definer
@@ -32,8 +32,8 @@ from(
 	select
 		 sp.stat_period_id
 		,st.initial_rating
-	from stat_tracking as st
-	inner join stat_period as sp
+	from ss.stat_tracking as st
+	inner join ss.stat_period as sp
 		on st.stat_tracking_id = sp.stat_tracking_id
 	where st.game_type_id = p_game_type_id
 		and st.is_rating_enabled = true
@@ -43,20 +43,16 @@ from(
 	limit 1
 ) as dt
 cross join unnest(p_player_names) as t(player_name)
-left outer join player as p
+left outer join ss.player as p
 	on t.player_name = p.player_name
-left outer  join player_rating as pr
+left outer  join ss.player_rating as pr
 	on p.player_id = pr.player_id
 		and dt.stat_period_id = pr.stat_period_id;
 
 $$;
 
-revoke all on function ss.get_player_rating(
-	 p_game_type_id game_type.game_type_id%type
-	,p_player_names character varying(20)[]
-) from public;
+alter function ss.get_player_rating owner to ss_developer;
 
-grant execute on function ss.get_player_rating(
-	 p_game_type_id game_type.game_type_id%type
-	,p_player_names character varying(20)[]
-) to ss_zone_server;
+revoke all on function ss.get_player_rating from public;
+
+grant execute on function ss.get_player_rating to ss_zone_server;

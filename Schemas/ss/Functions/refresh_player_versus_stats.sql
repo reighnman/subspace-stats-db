@@ -1,8 +1,10 @@
 create or replace function ss.refresh_player_versus_stats(
-	p_stat_period_id stat_period.stat_period_id%type
+	p_stat_period_id ss.stat_period.stat_period_id%type
 )
 returns void
 language plpgsql
+security definer
+set search_path = ss, pg_temp
 as
 $$
 
@@ -23,34 +25,86 @@ p_stat_period_id - Id of the stat period to refresh player stat data for.
 Usage:
 select ss.refresh_player_versus_stats(18);
 
-select * from stat_period;
-select * from stat_tracking;
-select * from player_rating;
+select * from ss.game_mode;
+select * from ss.stat_period;
+select * from ss.stat_period_type;
+select * from ss.stat_tracking;
+select * from ss.player_rating;
 */
 
 declare
-	l_game_type_id game_type.game_type_id%type;
-	l_period_range tstzrange;
+	l_game_type_id ss.game_type.game_type_id%type;
+	l_stat_period_type_id ss.stat_period_type.stat_period_type_id%type;
+	l_period_range ss.stat_period.period_range%type;
+	l_is_rating_enabled ss.stat_tracking.is_rating_enabled%type;
+	l_initial_rating ss.stat_tracking.initial_rating%type;
+	l_minimum_rating ss.stat_tracking.minimum_rating%type;
 begin
 	select
 		 st.game_type_id
+		,st.stat_period_type_id
 		,sp.period_range
+		,st.is_rating_enabled
+		,st.initial_rating
+		,st.minimum_rating
 	into
 		 l_game_type_id
+		,l_stat_period_type_id
 		,l_period_range
-	from stat_period as sp
-	inner join stat_tracking as st
+		,l_is_rating_enabled
+		,l_initial_rating
+		,l_minimum_rating
+	from ss.stat_period as sp
+	inner join ss.stat_tracking as st
 		on sp.stat_tracking_id = st.stat_tracking_id
-	where sp.stat_period_id = p_stat_period_id;
+	inner join ss.game_type as gt
+		on st.game_type_id = gt.game_type_id
+	where sp.stat_period_id = p_stat_period_id
+		and gt.game_mode_id = 2; -- Team Versus
 	
 	if l_game_type_id is null or l_period_range is null then
 		raise exception 'Invalid stat period specified. (%)', p_stat_period_id;
 	end if;
 	
-	delete from player_versus_stats
+	delete from ss.player_versus_stats
 	where stat_period_id = p_stat_period_id;
-	
-	insert into player_versus_stats(
+
+	if l_is_rating_enabled = true then
+		delete from ss.player_rating
+		where stat_period_id = p_stat_period_id;
+	end if;
+
+	with cte_games as( -- NOTE: This purposely targets specific covering indexes on the ss.game table.
+		-- non-league games
+		select g.game_id
+		from ss.game as g
+		where l_stat_period_type_id <> 2 -- not a League Season stat period
+			and l_period_range @> g.time_played -- match by time_played
+			and g.game_type_id = l_game_type_id -- and game type
+		union
+		-- league games
+		select g.game_id
+		from ss.game as g
+		where l_stat_period_type_id = 2 -- is a League Season stat period
+			and g.stat_period_id = p_stat_period_id -- match on the specific stat period for the season
+	)
+	,cte_insert_player_rating as(
+		insert into ss.player_rating(
+			 player_id
+			,stat_period_id
+			,rating
+		)
+		select
+			 vgtm.player_id
+			,p_stat_period_id
+			,greatest(l_initial_rating + sum(vgtm.rating_change), l_minimum_rating) as rating
+		from cte_games as c
+		inner join ss.versus_game_team_member as vgtm
+			on c.game_id = vgtm.game_id
+		where l_is_rating_enabled = true
+		group by vgtm.player_id
+	)
+	insert into ss.player_versus_stats(
 		 player_id
 		,stat_period_id
 		,games_played
@@ -91,6 +145,10 @@ begin
 		,wasted_decoy
 		,wasted_portal
 		,wasted_brick
+		,enemy_distance_sum
+		,enemy_distance_samples
+		,team_distance_sum
+		,team_distance_samples
 	)
 	select
 		 dt.player_id
@@ -133,6 +191,10 @@ begin
 		,sum(dt.wasted_decoy) as wasted_decoy
 		,sum(dt.wasted_portal) as wasted_portal
 		,sum(dt.wasted_brick) as wasted_brick
+		,sum(enemy_distance_sum) as enemy_distance_sum
+		,sum(enemy_distance_samples) as enemy_distance_samples
+		,sum(team_distance_sum) as team_distance_sum
+		,sum(team_distance_samples) as team_distance_samples
 	from(
 		select
 			 vgtm.game_id
@@ -140,7 +202,7 @@ begin
 			,vgt.is_winner
 			,case when exists(
 					select *
-					from versus_game_team as vgt2
+					from ss.versus_game_team as vgt2
 					where vgt2.game_id = vgtm.game_id
 						and vgt2.freq <> vgt.freq
 						and vgt2.is_winner = true
@@ -173,8 +235,8 @@ begin
 			,vgtm.bullet_hit_count
 			,vgtm.bomb_hit_count
 			,vgtm.mine_hit_count
-			,case when vgtm.first_out = 1 then true else false end as first_out_regular
-			,case when vgtm.first_out = 2 then true else false end as first_out_critical
+			,vgtm.first_out & 1 <> 0 as first_out_regular
+			,vgtm.first_out & 2 <> 0 as first_out_critical
 			,vgtm.wasted_energy
 			,vgtm.wasted_repel
 			,vgtm.wasted_rocket
@@ -183,15 +245,25 @@ begin
 			,vgtm.wasted_decoy
 			,vgtm.wasted_portal
 			,vgtm.wasted_brick
-		from game as g	
-		inner join versus_game_team_member as vgtm
+			,enemy_distance_sum
+			,enemy_distance_samples
+			,team_distance_sum
+			,team_distance_samples
+		from cte_games as c
+		inner join ss.game as g
+			on c.game_id = g.game_id
+		inner join ss.versus_game_team_member as vgtm
 			on g.game_id = vgtm.game_id
-		inner join versus_game_team as vgt
+		inner join ss.versus_game_team as vgt
 			on vgtm.game_id = vgt.game_id
 				and vgtm.freq = vgt.freq
-		where g.game_type_id = l_game_type_id
-			and l_period_range @> g.time_played
 	) as dt
 	group by dt.player_id;
 end;
 $$;
+
+alter function ss.refresh_player_versus_stats owner to ss_developer;
+
+revoke all on function ss.refresh_player_versus_stats from public;
+
+grant execute on function ss.refresh_player_versus_stats to ss_web_server;

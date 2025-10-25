@@ -57,3 +57,9 @@ when not matched then
 		,dv.initial_rating
 		,dv.minimum_rating
 	);
+
+-- Update the identity column value.
+select setval(pg_get_serial_sequence('ss.stat_tracking', 'stat_tracking_id'), dt.next_stat_tracking_id)
+from(
+	select max(stat_tracking_id)+1 as next_stat_tracking_id from ss.stat_tracking
+) as dt;

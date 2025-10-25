@@ -1,11 +1,11 @@
 create or replace function ss.get_top_players_by_rating(
-	 p_stat_period_id stat_period.stat_period_id%type
+	 p_stat_period_id ss.stat_period.stat_period_id%type
 	,p_top integer
 )
 returns table(
 	 top_rank integer
-	,player_name player.player_name%type
-	,rating player_rating.rating%type
+	,player_name ss.player.player_name%type
+	,rating ss.player_rating.rating%type
 )
 language sql
 security definer
@@ -24,7 +24,7 @@ p_top - The rank limit results.
 	If multiple players share the same rank, they will all be returned.
 
 Usage:
-select * from get_top_players_by_rating(16, 5);
+select * from ss.get_top_players_by_rating(16, 5);
 */
 
 select
@@ -36,10 +36,10 @@ from(
 		 dense_rank() over(order by pr.rating desc)::integer as top_rank
 		,pr.player_id
 		,pr.rating
-	from player_rating as pr
+	from ss.player_rating as pr
 	where pr.stat_period_id = p_stat_period_id
 ) as dt
-inner join player as p
+inner join ss.player as p
 	on dt.player_id = p.player_id
 where dt.top_rank <= p_top
 order by
@@ -48,12 +48,8 @@ order by
 
 $$;
 
-revoke all on function ss.get_top_players_by_rating(
-	 p_stat_period_id stat_period.stat_period_id%type
-	,p_top integer
-) from public;
+alter function ss.get_top_players_by_rating owner to ss_developer;
 
-grant execute on function ss.get_top_players_by_rating(
-	 p_stat_period_id stat_period.stat_period_id%type
-	,p_top integer
-) to ss_web_server;
+revoke all on function ss.get_top_players_by_rating from public;
+
+grant execute on function ss.get_top_players_by_rating to ss_web_server;

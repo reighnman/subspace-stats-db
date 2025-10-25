@@ -1,10 +1,10 @@
 create or replace function ss.get_or_insert_stat_periods(
-	 p_game_type_id game_type.game_type_id%type
+	 p_game_type_id ss.game_type.game_type_id%type
 	,p_as_of timestamptz
 )
 returns table(
-	 stat_period_id stat_period.stat_period_id%type
-	,stat_tracking_id stat_tracking.stat_tracking_id%type
+	 stat_period_id ss.stat_period.stat_period_id%type
+	,stat_tracking_id ss.stat_tracking.stat_tracking_id%type
 )
 language sql
 as
@@ -19,9 +19,9 @@ p_game_type_id - The game type to get stat periods for.
 p_as_of - The timestamp to get stat periods for.
 
 Usage:
-select * from get_or_insert_stat_periods(4, current_timestamp);
+select * from ss.get_or_insert_stat_periods(4, current_timestamp);
 
-select * from stat_period;
+select * from ss.stat_period;
 */
 
 with cte_all_periods as(
@@ -29,8 +29,8 @@ with cte_all_periods as(
 		 st.stat_tracking_id
 		,st.stat_period_type_id
 		,sp.stat_period_id
-	from stat_tracking as st
-	left outer join stat_period as sp
+	from ss.stat_tracking as st
+	left outer join ss.stat_period as sp
 		on st.stat_tracking_id = sp.stat_tracking_id
 			and sp.period_range @> p_as_of
 	where st.game_type_id = p_game_type_id
@@ -39,7 +39,7 @@ with cte_all_periods as(
 		)
 )
 ,cte_insert_stat_period as(
-	insert into stat_period(
+	insert into ss.stat_period(
 		 stat_tracking_id
 		,period_range
 	)
@@ -80,3 +80,7 @@ select
 from cte_insert_stat_period as cisp;
 
 $$;
+
+alter function ss.get_or_insert_stat_periods owner to ss_developer;
+
+revoke all on function ss.get_or_insert_stat_periods from public;

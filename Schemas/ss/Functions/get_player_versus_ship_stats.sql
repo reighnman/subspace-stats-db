@@ -1,6 +1,6 @@
 create or replace function ss.get_player_versus_ship_stats(
-	 p_player_name player.player_name%type
-	,p_stat_period_id stat_period.stat_period_id%type
+	 p_player_name ss.player.player_name%type
+	,p_stat_period_id ss.stat_period.stat_period_id%type
 )
 returns table(
 	 ship_type smallint
@@ -25,20 +25,20 @@ p_player_name - The name of the player to get stats for.
 p_stat_period_id - Id of the stat period to get data for.
 
 Usage:
-select * from get_player_versus_ship_stats('foo', 16);
-select * from get_player_versus_ship_stats('bar', 16);
-select * from get_player_versus_ship_stats('bar', 17);
-select * from get_player_versus_ship_stats('asdf', 16);
+select * from ss.get_player_versus_ship_stats('foo', 16);
+select * from ss.get_player_versus_ship_stats('bar', 16);
+select * from ss.get_player_versus_ship_stats('bar', 17);
+select * from ss.get_player_versus_ship_stats('asdf', 16);
 */
 
 declare
-	l_player_id player.player_id%type;
-	l_game_type_id game_type.game_type_id%type;
-	l_period_range stat_period.period_range%type;
+	l_player_id ss.player.player_id%type;
+	l_game_type_id ss.game_type.game_type_id%type;
+	l_period_range ss.stat_period.period_range%type;
 begin
 	select p.player_id
 	into l_player_id
-	from player as p
+	from ss.player as p
 	where p.player_name = p_player_name;
 	
 	if l_player_id is null then
@@ -51,8 +51,8 @@ begin
 	into
 		 l_game_type_id
 		,l_period_range
-	from stat_period as sp
-	inner join stat_tracking as st
+	from ss.stat_period as sp
+	inner join ss.stat_tracking as st
 		on sp.stat_tracking_id = st.stat_tracking_id
 	where sp.stat_period_id = p_stat_period_id;
 
@@ -70,11 +70,11 @@ begin
 				,ke.is_team_kill
 				,killed_ship
 				,killer_ship
-			from game as g
-			inner join game_event as ge
-					on g.game_id = ge.game_id
-				inner join versus_game_kill_event as ke
-					on ge.game_event_id = ke.game_event_id
+			from ss.game as g
+			inner join ss.game_event as ge
+				on g.game_id = ge.game_id
+			inner join ss.versus_game_kill_event as ke
+				on ge.game_event_id = ke.game_event_id
 			where g.game_type_id = l_game_type_id
 				and g.time_played && l_period_range
 				and ge.game_Event_type_id = 2 -- kill
@@ -93,7 +93,7 @@ begin
 				 0::smallint as ship -- warbird
 				,u.warbird_use as game_use_count
 				,u.warbird_duration as use_duration
-			from player_ship_usage as u
+			from ss.player_ship_usage as u
 			where u.player_id = l_player_id
 				and u.stat_period_id = p_stat_period_id
 			union
@@ -101,7 +101,7 @@ begin
 				 1::smallint -- javelin
 				,u.javelin_use as game_use_count
 				,u.javelin_duration as use_duration
-			from player_ship_usage as u
+			from ss.player_ship_usage as u
 			where u.player_id = l_player_id
 				and u.stat_period_id = p_stat_period_id
 			union
@@ -109,7 +109,7 @@ begin
 				 2::smallint -- spider
 				,u.spider_use as game_use_count
 				,u.spider_duration as use_duration
-			from player_ship_usage as u
+			from ss.player_ship_usage as u
 			where u.player_id = l_player_id
 				and u.stat_period_id = p_stat_period_id
 			union
@@ -117,7 +117,7 @@ begin
 				 3::smallint -- leviathan
 				,u.leviathan_use as game_use_count
 				,u.leviathan_duration as use_duration
-			from player_ship_usage as u
+			from ss.player_ship_usage as u
 			where u.player_id = l_player_id
 				and u.stat_period_id = p_stat_period_id
 			union
@@ -125,7 +125,7 @@ begin
 				 4::smallint -- terrier
 				,u.terrier_use as game_use_count
 				,u.terrier_duration as use_duration
-			from player_ship_usage as u
+			from ss.player_ship_usage as u
 			where u.player_id = l_player_id
 				and u.stat_period_id = p_stat_period_id
 			union
@@ -133,7 +133,7 @@ begin
 				 5::smallint -- weasel
 				,u.weasel_use as game_use_count
 				,u.weasel_duration as use_duration
-			from player_ship_usage as u
+			from ss.player_ship_usage as u
 			where u.player_id = l_player_id
 				and u.stat_period_id = p_stat_period_id
 			union
@@ -141,7 +141,7 @@ begin
 				 6::smallint -- lancaster
 				,u.lancaster_use as game_use_count
 				,u.lancaster_duration as use_duration
-			from player_ship_usage as u
+			from ss.player_ship_usage as u
 			where u.player_id = l_player_id
 				and u.stat_period_id = p_stat_period_id
 			union
@@ -149,7 +149,7 @@ begin
 				 7::smallint -- shark
 				,u.shark_use as game_use_count
 				,u.shark_duration as use_duration
-			from player_ship_usage as u
+			from ss.player_ship_usage as u
 			where u.player_id = l_player_id
 				and u.stat_period_id = p_stat_period_id
 		) as dt
@@ -171,7 +171,7 @@ begin
 				,sum(
 					case when exists(
 							select * 
-							from game_event_damage as d
+							from ss.game_event_damage as d
 							where d.game_event_id = h.game_event_id
 								and player_id <> l_player_id
 						)
@@ -189,12 +189,8 @@ begin
 end;
 $$;
 
-revoke all on function ss.get_player_versus_ship_stats(
-	 p_player_name player.player_name%type
-	,p_stat_period_id stat_period.stat_period_id%type
-) from public;
+alter function ss.get_player_versus_ship_stats owner to ss_developer;
 
-grant execute on function ss.get_player_versus_ship_stats(
-	 p_player_name player.player_name%type
-	,p_stat_period_id stat_period.stat_period_id%type
-) to ss_web_server;
+revoke all on function ss.get_player_versus_ship_stats from public;
+
+grant execute on function ss.get_player_versus_ship_stats to ss_web_server;

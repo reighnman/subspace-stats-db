@@ -1,25 +1,25 @@
 create or replace function ss.get_or_insert_arena(
-	p_arena_name arena.arena_name%type
+	p_arena_name ss.arena.arena_name%type
 )
-returns arena.arena_id%type
+returns ss.arena.arena_id%type
 language plpgsql
 as
 $$
 
 /*
 Usage:
-select get_or_insert_arena('turf');
-select get_or_insert_arena('TURF2');
-select get_or_insert_arena('turf1');
-select get_or_insert_arena('turf2');
-select get_or_insert_arena('0');
-select get_or_insert_arena('1');
-select get_or_insert_arena('4v4pub');
-select get_or_insert_arena('4v4pub1');
-select get_or_insert_arena('4v4pub2');
-select get_or_insert_arena('pb');
+select ss.get_or_insert_arena('turf');
+select ss.get_or_insert_arena('TURF2');
+select ss.get_or_insert_arena('turf1');
+select ss.get_or_insert_arena('turf2');
+select ss.get_or_insert_arena('0');
+select ss.get_or_insert_arena('1');
+select ss.get_or_insert_arena('4v4pub');
+select ss.get_or_insert_arena('4v4pub1');
+select ss.get_or_insert_arena('4v4pub2');
+select ss.get_or_insert_arena('pb');
 
-select * from arena;
+select * from ss.arena;
 */
 
 declare
@@ -30,11 +30,11 @@ begin
 
 	select a.arena_id
 	into l_arena_id
-	from arena as a
+	from ss.arena as a
 	where a.arena_name = p_arena_name;
 	
 	if l_arena_id is null then
-		insert into arena(arena_name)
+		insert into ss.arena(arena_name)
 		values(p_arena_name)
 		returning arena_id
 		into l_arena_id;
@@ -43,3 +43,7 @@ begin
 	return l_arena_id;
 end;
 $$;
+
+alter function ss.get_or_insert_arena owner to ss_developer;
+
+revoke all on function ss.get_or_insert_arena from public;

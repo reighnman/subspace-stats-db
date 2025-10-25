@@ -1,7 +1,8 @@
 create or replace function ss.save_game(
-	game_json jsonb
+	 p_game_json jsonb
+	,p_stat_period_id ss.stat_period.stat_period_id%type = null
 )
-returns game.game_id%type
+returns ss.game.game_id%type
 language sql
 security definer
 set search_path = ss, pg_temp
@@ -12,7 +13,12 @@ $$
 Saves data for a completed game into the database.
 
 Parameters:
-game_json - JSON that represents the game data to save.
+p_stat_period_id - An optional, stat period that limits which stat periods the game should be saved for.
+	For regular games, no period is passed. The game's stats will be applied to all of the stat periods that match the game's game type and game time.
+	For league matches, the season's stat period is passed. This is so that if there are multiple active seasons with the same game type, the game's stats
+	can be applied to only the season's stat period and lifetime/forever period.
+
+p_game_json - JSON that represents the game data to save.
 
 	The JSON differs based on game_type:
 	- "solo_stats" for solo game modes (e.g. 1v1, 1v1v1, FFA 1 player/team, ...)
@@ -426,10 +432,10 @@ select ss.save_game('
 with cte_data as(
 	select
 		 gr.game_type_id
-		,get_or_insert_zone_server(gr.zone_server_name) as zone_server_id
-		,get_or_insert_arena(gr.arena) as arena_id
+		,ss.get_or_insert_zone_server(gr.zone_server_name) as zone_server_id
+		,ss.get_or_insert_arena(gr.arena) as arena_id
 		,gr.box_number
-		,get_or_insert_lvl(gr.lvl_file_name, gr.lvl_checksum) as lvl_id
+		,ss.get_or_insert_lvl(gr.lvl_file_name, gr.lvl_checksum) as lvl_id
 		,tstzrange(gr.start_timestamp, gr.end_timestamp, '[)') as time_played
 		,gr.replay_path
 		,gr.players
@@ -437,15 +443,15 @@ with cte_data as(
 		,gr.team_stats
 		,gr.pb_stats
 		,gr.events
-	from jsonb_to_record(game_json) as gr(
+	from jsonb_to_record(p_game_json) as gr(
 		 game_type_id bigint
 		,zone_server_name character varying
 		,arena character varying
 		,box_number int
 		,lvl_file_name character varying(16)
 		,lvl_checksum integer
-		,start_timestamp timestamp
-		,end_timestamp timestamp
+		,start_timestamp timestamptz
+		,end_timestamp timestamptz
 		,replay_path character varying
 		,players jsonb
 		,solo_stats jsonb
@@ -456,7 +462,7 @@ with cte_data as(
 )
 ,cte_player as(	
 	select
-		 get_or_upsert_player(pe.key, pi.squad, pi.x_res, pi.y_res) as player_id
+		 ss.get_or_upsert_player(pe.key, pi.squad, pi.x_res, pi.y_res) as player_id
 		,pe.key as player_name
 	from cte_data as cd
 	cross join jsonb_each(cd.players) as pe
@@ -467,7 +473,7 @@ with cte_data as(
 	)
 )
 ,cte_game as(
-	insert into game(
+	insert into ss.game(
 		 game_type_id
 		,zone_server_id
 		,arena_id
@@ -475,6 +481,7 @@ with cte_data as(
 		,time_played
 		,replay_path
 		,lvl_id
+		,stat_period_id
 	)
 	select
 		 game_type_id
@@ -484,6 +491,7 @@ with cte_data as(
 		,time_played
 		,replay_path
 		,lvl_id
+		,p_stat_period_id
 	from cte_data
 	returning game.game_id
 )
@@ -492,13 +500,13 @@ with cte_data as(
 		 par.player as player_name
 		,s.value as participant_json
 	from cte_data as cd
-	inner join game_type as gt
+	inner join ss.game_type as gt
 		on cd.game_type_id = gt.game_type_id
 	cross join jsonb_array_elements(cd.solo_stats) as s
 	cross join jsonb_to_record(s.value) as par(
 		player character varying
 	)
-	where gt.is_solo = true
+	where gt.game_mode_id = 1 -- 1v1
 )
 ,cte_team_stats as(
 	select
@@ -507,7 +515,7 @@ with cte_data as(
 		,t.score
 		,t.player_slots
 	from cte_data as cd
-	inner join game_type as gt
+	inner join ss.game_type as gt
 		on cd.game_type_id = gt.game_type_id
 	cross join jsonb_array_elements(cd.team_stats) as j
 	cross join jsonb_to_record(j.value) as t(
@@ -516,10 +524,10 @@ with cte_data as(
 		,score integer
 		,player_slots jsonb
 	)
-	where gt.is_team_versus = true
+	where gt.game_mode_id = 2 -- Team Versus
 )
 ,cte_versus_team as(
-	insert into versus_game_team(
+	insert into ss.versus_game_team(
 		 game_id
 		,freq
 		,is_winner
@@ -554,13 +562,13 @@ with cte_data as(
 		 t.freq
 		,s.value as team_json
 	from cte_data as cd
-	inner join game_type as gt
+	inner join ss.game_type as gt
 		on cd.game_type_id = gt.game_type_id
 	cross join jsonb_array_elements(cd.pb_stats) as s
 	cross join jsonb_to_record(s.value) as t(
 		 freq smallint
 	)
-	where gt.is_pb = true
+	where gt.game_mode_id = 3 -- Powerball
 )
 ,cte_pb_participants as(
 	select
@@ -574,7 +582,7 @@ with cte_data as(
 	)
 )
 ,cte_solo_game_participant as(
-	insert into solo_game_participant(
+	insert into ss.solo_game_participant(
 		 game_id
 		,player_id
 		,play_duration
@@ -681,7 +689,7 @@ with cte_data as(
 		,mine_hit_count
 )
 ,cte_pb_game_participant as(
-	insert into pb_game_participant(
+	insert into ss.pb_game_participant(
 		 game_id
 		,freq
 		,player_id
@@ -739,7 +747,7 @@ with cte_data as(
 	)
 )
 ,cte_pb_game_score as(
-	insert into pb_game_score(
+	insert into ss.pb_game_score(
 		 game_id
 		,freq
 		,score
@@ -822,7 +830,7 @@ with cte_data as(
 	group by dt.player_id
 )
 ,cte_versus_team_member as(
-	insert into versus_game_team_member(
+	insert into ss.versus_game_team_member(
 		 game_id
 		,freq
 		,slot_idx
@@ -1033,7 +1041,7 @@ with cte_data as(
 	cross join jsonb_array_elements(cd.events) with ordinality je
 )
 ,cte_game_event as(
-	insert into game_event(
+	insert into ss.game_event(
 		 game_event_id
 		,game_id
 		,event_idx
@@ -1056,7 +1064,7 @@ with cte_data as(
 		,game_event.game_event_type_id
 )
 ,cte_versus_game_assign_slot_event as(
-	insert into versus_game_assign_slot_event(
+	insert into ss.versus_game_assign_slot_event(
 		 game_event_id
 		,freq
 		,slot_idx
@@ -1080,7 +1088,7 @@ with cte_data as(
 	where cme.game_event_type_id = 1 -- Assign Slot
 )
 ,cte_versus_game_kill_event as(
-	insert into versus_game_kill_event(
+	insert into ss.versus_game_kill_event(
 		 game_event_id
 		,killed_player_id
 		,killer_player_id
@@ -1127,7 +1135,7 @@ with cte_data as(
 	where cme.game_event_type_id = 2 -- Kill
 )
 ,cte_game_event_damage as(
-	insert into game_event_damage(
+	insert into ss.game_event_damage(
 		 game_event_id
 		,player_id
 		,damage
@@ -1144,7 +1152,7 @@ with cte_data as(
 		on ds.key = p.player_name
 )
 ,cte_game_ship_change_event as(
-	insert into game_ship_change_event(
+	insert into ss.game_ship_change_event(
 		 game_event_id
 		,player_id
 		,ship
@@ -1165,7 +1173,7 @@ with cte_data as(
 	where cge.game_event_type_id = 3 -- ship change
 )
 ,cte_game_use_item_event as(
-	insert into game_use_item_event(
+	insert into ss.game_use_item_event(
 		 game_event_id
 		,player_id
 		,ship_item_id
@@ -1187,7 +1195,7 @@ with cte_data as(
 
 )
 ,cte_game_event_rating as(
-	insert into game_event_rating(
+	insert into ss.game_event_rating(
 		 game_event_id
 		,player_id
 		,rating
@@ -1204,15 +1212,33 @@ with cte_data as(
 		on r.key = cp.player_name
 )
 ,cte_stat_periods as(
+	-- regular games (p_stat_period_id is null) - apply to all stat periods that match by game_type_id and time_played
 	select
 		 sp.stat_period_id
+		,st.is_rating_enabled
 		,st.initial_rating
 		,st.minimum_rating
-		,st.is_rating_enabled
 	from cte_data as cd
-	cross join get_or_insert_stat_periods(cd.game_type_id, lower(cd.time_played)) as sp
+	cross join ss.get_or_insert_stat_periods(cd.game_type_id, lower(cd.time_played)) as sp
 	inner join stat_tracking as st
 		on sp.stat_tracking_id = st.stat_tracking_id
+	where p_stat_period_id is null
+	union
+	-- league matches (p_stat_period_id is not null) - apply to only the specified stat period and the lifetime/forever stat period
+	select
+		 sp.stat_period_id
+		,st.is_rating_enabled
+		,st.initial_rating
+		,st.minimum_rating
+	from cte_data as cd
+	inner join ss.stat_tracking as st
+		on cd.game_type_id = st.game_type_id
+	inner join ss.stat_period as sp
+		on st.stat_tracking_id = sp.stat_tracking_id
+	where p_stat_period_id is not null
+		and (sp.stat_period_id = p_stat_period_id
+			or st.stat_period_type_id = 0 -- lifetime/forever
+		)
 )
 ,cte_player_solo_stats as(
 	select
@@ -1245,14 +1271,11 @@ with cte_data as(
 		,csgp.bomb_hit_count
 		,csgp.mine_hit_count
 	from cte_data as cd
-	inner join game_type as gt
-		on cd.game_type_id = gt.game_type_id
 	cross join cte_solo_game_participant as csgp
 	cross join cte_stat_periods as csp
-	where gt.is_solo = true
 )
 ,cte_insert_player_solo_stats as(
-	insert into player_solo_stats(
+	insert into ss.player_solo_stats(
 		 player_id
 		,stat_period_id
 		,games_played
@@ -1307,7 +1330,7 @@ with cte_data as(
 		,stat_period_id
 )
 ,cte_update_player_solo_stats as(
-	update player_solo_stats as p
+	update ss.player_solo_stats as p
 	set
 		 games_played = p.games_played + 1
 		,play_duration = p.play_duration + c.play_duration
@@ -1423,8 +1446,8 @@ with cte_data as(
 			,cvtm.bullet_hit_count
 			,cvtm.bomb_hit_count
 			,cvtm.mine_hit_count
-			,case when cvtm.first_out = 1 then true else false end as first_out_regular
-			,case when cvtm.first_out = 2 then true else false end as first_out_critical
+			,cvtm.first_out & 1 <> 0 as first_out_regular
+			,cvtm.first_out & 2 <> 0 as first_out_critical
 			,cvtm.wasted_energy
 			,cvtm.wasted_repel
 			,cvtm.wasted_rocket
@@ -1438,20 +1461,17 @@ with cte_data as(
 			,cvtm.team_distance_sum
 			,cvtm.team_distance_samples
 		from cte_data as cd
-		inner join game_type as gt
-			on cd.game_type_id = gt.game_type_id
 		cross join cte_versus_team_member as cvtm
 		inner join cte_versus_team as cvt
 			on cvtm.freq = cvt.freq
 		cross join cte_stat_periods as csp
-		where gt.is_team_versus = true
 	) as dt
 	group by -- in case the player played on multiple teams
 		 dt.player_id
 		,dt.stat_period_id
 )
 ,cte_insert_player_versus_stats as(
-	insert into player_versus_stats(
+	insert into ss.player_versus_stats(
 		 player_id
 		,stat_period_id
 		,wins
@@ -1545,7 +1565,7 @@ with cte_data as(
 	from cte_player_versus_stats as cpvs
 	where not exists(
 			select *
-			from player_versus_stats as pvs
+			from ss.player_versus_stats as pvs
 			where pvs.player_id = cpvs.player_id
 				and pvs.stat_period_id = cpvs.stat_period_id
 		)
@@ -1554,7 +1574,7 @@ with cte_data as(
 		,stat_period_id
 )
 ,cte_update_player_versus_stats as(
-	update player_versus_stats as pvs
+	update ss.player_versus_stats as pvs
 	set  wins = pvs.wins + cpvs.wins
 		,losses = pvs.losses + cpvs.losses
 		,games_played = pvs.games_played + 1
@@ -1629,7 +1649,7 @@ with cte_data as(
 --,cte_update_player_pb_stats as(
 --)
 ,cte_insert_player_rating as(
-	insert into player_rating(
+	insert into ss.player_rating(
 		 player_id
 		,stat_period_id
 		,rating
@@ -1649,15 +1669,16 @@ with cte_data as(
 	where csp.is_rating_enabled = true
 		and not exists(
 			select *
-			from player_rating as pr
+			from ss.player_rating as pr
 			where pr.player_id = dt.player_id
 				and pr.stat_period_id = csp.stat_period_id
 		)
 	returning
-		stat_period_id
+		 player_id
+		,stat_period_id
 )
 ,cte_update_player_rating as(
-	update player_rating as pr
+	update ss.player_rating as pr
 	set rating = greatest(pr.rating + dt.rating_change, csp.minimum_rating)
 	from cte_stat_periods as csp
 	cross join(
@@ -1669,14 +1690,16 @@ with cte_data as(
 	) as dt
 	where csp.is_rating_enabled = true
 		and pr.player_id = dt.player_id
+		and pr.stat_period_id = csp.stat_period_id
 		and not exists( -- TODO: this might not be needed since this cte can't see the rows inserted by cte_insert_player_rating?
 			select *
 			from cte_insert_player_rating as i
-			where i.stat_period_id = csp.stat_period_id
+			where i.player_id = dt.player_id
+				and i.stat_period_id = csp.stat_period_id
 		)
 )
 ,cte_update_player_ship_usage as(
-	update player_ship_usage as psu
+	update ss.player_ship_usage as psu
 	set
 		 warbird_use = psu.warbird_use + case when c.warbird_duration > cast('0' as interval) then 1 else 0 end
 		,javelin_use = psu.javelin_use + case when c.javelin_duration > cast('0' as interval) then 1 else 0 end
@@ -1700,7 +1723,7 @@ with cte_data as(
 		and psu.stat_period_id = csp.stat_period_id
 )
 ,cte_insert_player_ship_usage as(
-	insert into player_ship_usage(
+	insert into ss.player_ship_usage(
 		 player_id
 		,stat_period_id
 		,warbird_use
@@ -1743,7 +1766,7 @@ with cte_data as(
 	cross join cte_stat_periods as csp
 	where not exists(
 			select *
-			from player_ship_usage as psu
+			from ss.player_ship_usage as psu
 			where psu.player_id = c.player_id
 				and psu.stat_period_id = csp.stat_period_id
 		)
@@ -1753,10 +1776,17 @@ from cte_game as cm;
 
 $$;
 
+alter function ss.save_game(
+	 p_game_json jsonb
+	,p_stat_period_id ss.stat_period.stat_period_id%type
+) owner to ss_developer;
+
 revoke all on function ss.save_game(
-	game_json jsonb
+	 p_game_json jsonb
+	,p_stat_period_id ss.stat_period.stat_period_id%type
 ) from public;
 
 grant execute on function ss.save_game(
-	game_json jsonb
+	 p_game_json jsonb
+	,p_stat_period_id ss.stat_period.stat_period_id%type
 ) to ss_zone_server;

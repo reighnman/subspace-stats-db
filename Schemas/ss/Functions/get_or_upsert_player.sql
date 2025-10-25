@@ -1,10 +1,10 @@
 create or replace function ss.get_or_upsert_player(
-	 p_player_name player.player_name%type
-	,p_squad_name squad.squad_name%type
-	,p_x_res player.x_res%type
-	,p_y_res player.y_res%type
+	 p_player_name ss.player.player_name%type
+	,p_squad_name ss.squad.squad_name%type
+	,p_x_res ss.player.x_res%type
+	,p_y_res ss.player.y_res%type
 )
-returns player.player_id%type
+returns ss.player.player_id%type
 language plpgsql
 as
 $$
@@ -18,29 +18,29 @@ If there is a record, UPDATE the name to match if there is a difference in upper
 This way, we remember the name in the form it was last used.
 
 Usage:
-select get_or_upsert_player('foo', null, 1024::smallint, 768::smallint);
-select get_or_upsert_player('foo', 'test', 1024::smallint, 768::smallint);
-select get_or_upsert_player('foo', 'the best squad', 1024::smallint, 768::smallint);
-select get_or_upsert_player('foo', null, 1920::smallint, 1080::smallint);
-select get_or_upsert_player('FOO', null, 1024::smallint, 768::smallint);
-select get_or_upsert_player(' ', null, 1024::smallint, 768::smallint);
+select ss.get_or_upsert_player('foo', null, 1024::smallint, 768::smallint);
+select ss.get_or_upsert_player('foo', 'test', 1024::smallint, 768::smallint);
+select ss.get_or_upsert_player('foo', 'the best squad', 1024::smallint, 768::smallint);
+select ss.get_or_upsert_player('foo', null, 1920::smallint, 1080::smallint);
+select ss.get_or_upsert_player('FOO', null, 1024::smallint, 768::smallint);
+select ss.get_or_upsert_player(' ', null, 1024::smallint, 768::smallint);
 
-select * from player;
-select * from squad;
+select * from ss.player;
+select * from ss.squad;
 */
 
 declare
-	l_player_id player.player_id%type;
-	l_squad_id squad.squad_id%type;
+	l_player_id ss.player.player_id%type;
+	l_squad_id ss.squad.squad_id%type;
 begin
 	p_player_name := trim(p_player_name);
 	if p_player_name is null or p_player_name = '' then
 		return null;
 	end if;
 
-	l_squad_id := get_or_upsert_squad(p_squad_name);
+	l_squad_id := ss.get_or_upsert_squad(p_squad_name);
 	
-	merge into player as p
+	merge into ss.player as p
 	using(
 		select
 			 p_player_name as player_name
@@ -76,9 +76,13 @@ begin
 		
 	select player_id
 	into l_player_id
-	from player
+	from ss.player
 	where player_name = p_player_name; -- case insensitive
 
 	return l_player_id;
 end;
 $$;
+
+alter function ss.get_or_upsert_player owner to ss_developer;
+
+revoke all on function ss.get_or_upsert_player from public;

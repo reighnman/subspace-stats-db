@@ -1,11 +1,11 @@
 create or replace function ss.get_top_versus_players_by_avg_rating(
-	 p_stat_period_id stat_period.stat_period_id%type
+	 p_stat_period_id ss.stat_period.stat_period_id%type
 	,p_top integer
 	,p_min_games_played integer = 1
 )
 returns table(
 	 top_rank bigint
-	,player_name player.player_name%type
+	,player_name ss.player.player_name%type
 	,avg_rating real
 )
 language plpgsql
@@ -26,12 +26,12 @@ p_top - The rank limit results.
 p_min_games_played - The minimum # of games a player must have played to be included in the result.
 
 Usage:
-select * from get_top_versus_players_by_avg_rating(17, 5, 3);
-select * from get_top_versus_players_by_avg_rating(17, 5);
+select * from ss.get_top_versus_players_by_avg_rating(17, 5, 3);
+select * from ss.get_top_versus_players_by_avg_rating(17, 5);
 */
 
 declare
-	l_initial_rating stat_tracking.initial_rating%type;
+	l_initial_rating ss.stat_tracking.initial_rating%type;
 begin
 	if p_min_games_played < 1 then
 		p_min_games_played := 1;
@@ -39,8 +39,8 @@ begin
 
 	select st.initial_rating
 	into l_initial_rating
-	from stat_period as sp
-	inner join stat_tracking as st
+	from ss.stat_period as sp
+	inner join ss.stat_tracking as st
 		on sp.stat_tracking_id = st.stat_tracking_id
 	where sp.stat_period_id = p_stat_period_id;
 
@@ -62,15 +62,15 @@ begin
 				select
 					 pr.player_id
 					,(pr.rating - l_initial_rating)::real / pvs.games_played::real as avg_rating
-				from player_versus_stats as pvs
-				left outer join player_rating as pr
+				from ss.player_versus_stats as pvs
+				left outer join ss.player_rating as pr
 					on pvs.player_id = pr.player_id
 						and pvs.stat_period_id = pr.stat_period_id
 				where pvs.stat_period_id = p_stat_period_id
 					and pvs.games_played >= coalesce(p_min_games_played, 1)
 			) as dt
 		) as dt2
-		inner join player as p
+		inner join ss.player as p
 			on dt2.player_id = p.player_id
 		where dt2.top_rank <= p_top
 		order by
@@ -79,14 +79,8 @@ begin
 end;
 $$;
 
-revoke all on function ss.get_top_versus_players_by_avg_rating(
-	 p_stat_period_id stat_period.stat_period_id%type
-	,p_top integer
-	,p_min_games_played integer
-) from public;
+alter function ss.get_top_versus_players_by_avg_rating owner to ss_developer;
 
-grant execute on function ss.get_top_versus_players_by_avg_rating(
-	 p_stat_period_id stat_period.stat_period_id%type
-	,p_top integer
-	,p_min_games_played integer
-) to ss_web_server;
+revoke all on function ss.get_top_versus_players_by_avg_rating from public;
+
+grant execute on function ss.get_top_versus_players_by_avg_rating to ss_web_server;
