@@ -32,7 +32,8 @@ select
 from league.roster as r
 inner join ss.player as p
 	on r.player_id = p.player_id
-where r.season_id = p_season_id;
+where r.season_id = p_season_id
+order by p.player_name;
 
 $$;
 
